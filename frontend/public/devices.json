@@ -1,0 +1,26 @@
+[
+  {
+    "id": "device01",
+    "name": "Teploměr kuchyně",
+    "type": "temperature",
+    "value": "22.5 °C",
+    "status": "online",
+    "lastSeen": "2025-04-28T18:05:00Z"
+  },
+  {
+    "id": "device02",
+    "name": "Zásuvka obývák",
+    "type": "socket",
+    "value": "Zapnuto",
+    "status": "offline",
+    "lastSeen": "2025-04-28T17:45:00Z"
+  },
+  {
+    "id": "device03",
+    "name": "Senzor pohybu",
+    "type": "motion",
+    "value": "Aktivní",
+    "status": "online",
+    "lastSeen": "2025-04-28T18:10:00Z"
+  }
+]
