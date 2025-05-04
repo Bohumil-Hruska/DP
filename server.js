@@ -85,17 +85,25 @@ client.on('message', function (topic, message) {
     try {
         const payload = JSON.parse(message.toString());
 
+        // Získání hodnoty výstupu ze struktury např. { "switch:0": { output: true } }
+        const outputRaw = payload["switch:0"]?.output ?? payload.output;
+
+        // Interpretace jako zapnuto/vypnuto
+        const value = outputRaw === true ? 'zapnuto' :
+            outputRaw === false ? 'vypnuto' :
+                payload.value || payload.state || payload.status || '-';
+
         connectedDevices[deviceId] = {
             id: deviceId,
             name: payload.name || deviceId,
-            type: payload.type || 'unknown', // Pokud zařízení pošle typ, uložíme ho
-            value: payload.value || payload.state || payload.status || '-',
+            type: payload.type || 'unknown',
+            value,
             status: 'online',
             lastSeen: new Date().toISOString()
         };
 
     } catch (err) {
-        // Pokud není JSON, stejně zařízení evidujeme
+        // Pokud není JSON nebo chybí data
         if (!connectedDevices[deviceId]) {
             connectedDevices[deviceId] = {
                 id: deviceId,
@@ -106,12 +114,12 @@ client.on('message', function (topic, message) {
                 lastSeen: new Date().toISOString()
             };
         } else {
-            // jen aktualizujeme lastSeen pokud už existuje
             connectedDevices[deviceId].lastSeen = new Date().toISOString();
             connectedDevices[deviceId].status = 'online';
         }
     }
 });
+
 
 // API endpoint pro zařízení
 app.get('/api/devices', (req, res) => {
