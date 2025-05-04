@@ -8,19 +8,17 @@ const SpotifyPlayer = () => {
     const [token, setToken] = useState('');
 
     useEffect(() => {
-        const urlParams = new URLSearchParams(window.location.search);
-        const tokenFromUrl = urlParams.get('token');
-
-        if (tokenFromUrl) {
-            localStorage.setItem('spotifyToken', tokenFromUrl);
-            setToken(tokenFromUrl);
-        } else {
-            const storedToken = localStorage.getItem('spotifyToken');
-            if (storedToken) setToken(storedToken);
-        }
+        const t = localStorage.getItem('spotifyToken');
+        if (t) setToken(t);
     }, []);
 
+
     const fetchDevices = async () => {
+        if (!token) {
+            alert('Token není k dispozici. Přihlaste se znovu.');
+            return;
+        }
+
         try {
             const res = await axios.get('https://api.spotify.com/v1/me/player/devices', {
                 headers: { Authorization: `Bearer ${token}` }
@@ -28,9 +26,10 @@ const SpotifyPlayer = () => {
             setDevices(res.data.devices);
         } catch (error) {
             console.error('Chyba při načítání zařízení:', error);
-            alert('Chyba při získávání zařízení. Zkontroluj přihlášení ke Spotify.');
+            alert('Chyba při načítání zařízení. Zkuste se znovu přihlásit ke Spotify.');
         }
     };
+
 
     const play = async () => {
         try {
