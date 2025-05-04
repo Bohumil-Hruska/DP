@@ -6,6 +6,8 @@ const mqtt = require('mqtt');
 const bcrypt = require('bcrypt');
 const path = require('path');
 const fs = require('fs');
+const querystring = require('querystring');
+const fetch = require('node-fetch');
 
 
 
@@ -119,6 +121,45 @@ client.on('message', function (topic, message) {
             connectedDevices[deviceId].status = 'online';
         }
     }
+});
+
+// Přesměrování uživatele na Spotify login
+app.get('/api/spotify/login', (req, res) => {
+    const scope = 'user-read-playback-state user-modify-playback-state';
+    const params = querystring.stringify({
+        response_type: 'code',
+        client_id: process.env.SPOTIFY_CLIENT_ID,
+        scope,
+        redirect_uri: process.env.SPOTIFY_REDIRECT_URI
+    });
+
+    res.redirect('https://accounts.spotify.com/authorize?' + params);
+});
+
+// Získání přístupového tokenu
+app.get('/callback', async (req, res) => {
+    const code = req.query.code;
+
+    const response = await fetch('https://accounts.spotify.com/api/token', {
+        method: 'POST',
+        headers: {
+            'Authorization': 'Basic ' + Buffer.from(
+                process.env.SPOTIFY_CLIENT_ID + ':' + process.env.SPOTIFY_CLIENT_SECRET
+            ).toString('base64'),
+            'Content-Type': 'application/x-www-form-urlencoded'
+        },
+        body: querystring.stringify({
+            grant_type: 'authorization_code',
+            code,
+            redirect_uri: process.env.SPOTIFY_REDIRECT_URI
+        })
+    });
+
+    const data = await response.json();
+    console.log('Token získán:', data);
+
+    // Ulož access token (např. do session, cookies, DB) a přesměruj zpět do UI
+    res.redirect('/'); // nebo kdekoliv ve frontend
 });
 
 app.get('/api/bluetooth-devices', authenticate, (req, res) => {

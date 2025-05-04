@@ -155,6 +155,21 @@ const Dashboard = ({handleLogout}) => {
                     <div className="card text-center shadow h-100">
                         <div className="card-body d-flex flex-column justify-content-between">
                             <div>
+                                <FaWifi className="text-primary mb-3" size={50}/>
+                                <h5 className="card-title">Služby</h5>
+                                <p className="card-text">Spotify, YouTube, ...</p>
+                            </div>
+                            <a href="/api/spotify/login" className="btn btn-success">
+                                Připojit Spotify
+                            </a>
+                        </div>
+                    </div>
+                </div>
+
+                <div className="col">
+                    <div className="card text-center shadow h-100">
+                        <div className="card-body d-flex flex-column justify-content-between">
+                            <div>
                                 <FaPlusSquare className="text-primary mb-3" size={50}/>
                                 <h5 className="card-title">Nové zařízení</h5>
                                 <p className="card-text">Zaregistruj MQTT zařízení</p>
