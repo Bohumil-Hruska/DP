@@ -8,6 +8,7 @@ const path = require('path');
 const fs = require('fs');
 const querystring = require('querystring');
 const fetch = require('node-fetch');
+const cookieParser = require('cookie-parser');
 
 
 
@@ -39,6 +40,7 @@ const { execSync } = require('child_process');
 
 
 const app = express();
+app.use(cookieParser());
 const PORT = 3000;
 
 
@@ -137,7 +139,6 @@ app.get('/api/spotify/login', (req, res) => {
 
 app.get('/callback', async (req, res) => {
     const code = req.query.code;
-
     const response = await fetch('https://accounts.spotify.com/api/token', {
         method: 'POST',
         headers: {
@@ -154,10 +155,28 @@ app.get('/callback', async (req, res) => {
     });
 
     const data = await response.json();
-    console.log('🎵 Spotify přihlášen:', data);
+    if (data.access_token) {
+        res.cookie('spotify_access_token', data.access_token, {
+            httpOnly: true,
+            secure: true,
+            sameSite: 'Strict',
+            maxAge: 3600 * 1000
+        });
+        res.redirect('/spotify-player');
+    } else {
+        res.status(400).send('Chyba při přihlášení ke Spotify');
+    }
+});
 
-    // Zobraz jen token jako potvrzení úspěšného přihlášení
-    res.send(`<h1>Přihlášeno ke Spotify!</h1><pre>${JSON.stringify(data, null, 2)}</pre>`);
+app.get('/api/spotify/devices', async (req, res) => {
+    const token = req.cookies.spotify_access_token;
+    if (!token) return res.status(401).json({ error: 'Neautorizováno' });
+
+    const response = await fetch('https://api.spotify.com/v1/me/player/devices', {
+        headers: { Authorization: `Bearer ${token}` }
+    });
+    const data = await response.json();
+    res.json(data);
 });
 
 
