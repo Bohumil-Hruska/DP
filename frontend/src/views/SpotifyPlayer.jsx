@@ -9,23 +9,40 @@ const SpotifyPlayer = () => {
 
     useEffect(() => {
         const urlParams = new URLSearchParams(window.location.search);
-        const t = urlParams.get('token');
-        if (t) setToken(t);
+        const tokenFromUrl = urlParams.get('token');
+
+        if (tokenFromUrl) {
+            localStorage.setItem('spotifyToken', tokenFromUrl);
+            setToken(tokenFromUrl);
+        } else {
+            const storedToken = localStorage.getItem('spotifyToken');
+            if (storedToken) setToken(storedToken);
+        }
     }, []);
 
     const fetchDevices = async () => {
-        const res = await axios.get('https://api.spotify.com/v1/me/player/devices', {
-            headers: { Authorization: `Bearer ${token}` }
-        });
-        setDevices(res.data.devices);
+        try {
+            const res = await axios.get('https://api.spotify.com/v1/me/player/devices', {
+                headers: { Authorization: `Bearer ${token}` }
+            });
+            setDevices(res.data.devices);
+        } catch (error) {
+            console.error('Chyba při načítání zařízení:', error);
+            alert('Chyba při získávání zařízení. Zkontroluj přihlášení ke Spotify.');
+        }
     };
 
     const play = async () => {
-        await axios.post('/api/spotify/play', {
-            accessToken: token,
-            deviceId: selectedDevice,
-            trackUri
-        });
+        try {
+            await axios.post('/api/spotify/play', {
+                accessToken: token,
+                deviceId: selectedDevice,
+                trackUri
+            });
+        } catch (error) {
+            console.error('Chyba při přehrávání:', error);
+            alert('Nepodařilo se spustit přehrávání.');
+        }
     };
 
     return (
@@ -37,8 +54,8 @@ const SpotifyPlayer = () => {
             </div>
 
             <div className="mb-3">
-                <select className="form-select" onChange={(e) => setSelectedDevice(e.target.value)}>
-                    <option>Vyber zařízení</option>
+                <select className="form-select" value={selectedDevice} onChange={(e) => setSelectedDevice(e.target.value)}>
+                    <option value="">Vyber zařízení</option>
                     {devices.map((d) => (
                         <option key={d.id} value={d.id}>{d.name}</option>
                     ))}
