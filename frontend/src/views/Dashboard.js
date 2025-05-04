@@ -144,6 +144,9 @@ const Dashboard = ({handleLogout}) => {
                             <Link to="/devices" className="btn btn-primary mt-3">
                                 Zobrazit seznam
                             </Link>
+                            <Link to="/bluetooth" className="btn btn-info mt-3">
+                                Bluetooth zařízení
+                            </Link>
                         </div>
                     </div>
                 </div>

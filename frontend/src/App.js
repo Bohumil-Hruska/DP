@@ -9,6 +9,7 @@ import AutomationManager from './views/AutomationManager';
 import AlertMessage from './views/AlertMessage';
 import UnregisteredDevices from './views/UnregisteredDevices';
 import RoomManager from './views/RoomManager';
+import BluetoothDevices from './views/BluetoothDevices';
 import { turnOnDevice, turnOffDevice, registerUser, loginUser, logoutUser } from './api';
 
 function App() {
@@ -95,6 +96,7 @@ function App() {
                         <Route path="/rooms" element={<RoomManager />} />
                         <Route path="/automation" element={<AutomationManager />} />
                         <Route path="/add-device" element={<UnregisteredDevices />} />
+                        <Route path="/bluetooth" element={<BluetoothDevices />} />
                         <Route path="*" element={<Navigate to="/" />} />
                       </>
                   )}

@@ -33,6 +33,31 @@ function authenticate(req, res, next) {
     }
 }
 
+const { execSync } = require('child_process');
+
+app.get('/api/bluetooth-devices', authenticate, (req, res) => {
+    try {
+        const result = execSync("bluetoothctl devices Connected").toString();
+        const devices = result
+            .split('\n')
+            .filter(line => line.trim() !== '')
+            .map(line => {
+                const [, mac, ...nameParts] = line.split(' ');
+                return {
+                    mac,
+                    name: nameParts.join(' ')
+                };
+            });
+
+        res.json(devices);
+    } catch (err) {
+        console.error('Chyba při získávání BT zařízení:', err);
+        res.status(500).json({ error: 'Chyba při získávání Bluetooth zařízení' });
+    }
+});
+
+
+
 
 
 const app = express();
