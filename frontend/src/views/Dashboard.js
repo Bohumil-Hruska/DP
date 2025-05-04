@@ -159,9 +159,9 @@ const Dashboard = ({handleLogout}) => {
                                     <h5 className="card-title">Služby</h5>
                                     <p className="card-text">Spotify, YouTube, ...</p>
                                 </div>
-                                <a href="/api/spotify/login" className="btn btn-success">
+                                <Link to="/api/spotify/login" className="btn btn-success">
                                     Připojit Spotify
-                                </a>
+                                </Link>
                                 <Link to="/spotify-player" className="btn btn-success">
                                     Spotify přehrávač
                                 </Link>
