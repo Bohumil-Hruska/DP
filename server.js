@@ -181,14 +181,17 @@ app.get('/callback', async (req, res) => {
     });
 
     const data = await response.json();
+    console.log('Spotify token:', data);
 
-    if (data.access_token) {
-        // Přesměruj do frontendu s tokenem v URL
-        res.redirect(`/spotify?token=${data.access_token}`);
-    } else {
-        res.send('Nepodařilo se získat token.');
-    }
+    // Vrátíme jednoduchou stránku, která uloží token do localStorage a přesměruje do /spotify-player
+    res.send(`
+        <script>
+            localStorage.setItem('spotifyToken', '${data.access_token}');
+            window.location.href = '/spotify-player';
+        </script>
+    `);
 });
+
 
 
 
