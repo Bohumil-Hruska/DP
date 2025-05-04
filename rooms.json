@@ -1,0 +1,21 @@
+[
+  {
+    "id": "1746265617859",
+    "name": "Ložnice",
+    "devices": []
+  },
+  {
+    "id": "1746275562592",
+    "name": "Obývák",
+    "devices": [
+      {
+        "id": "1746265642961",
+        "name": "Zásvuka tv",
+        "type": "zásuvka",
+        "status": "offline",
+        "value": null,
+        "lastSeen": "2025-05-03T09:47:22.961Z"
+      }
+    ]
+  }
+]

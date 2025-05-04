@@ -5,7 +5,10 @@ import ConnectedDevices from './views/ConnectedDevices';
 import DeviceControl from './views/DeviceControl';
 import Login from './views/Login';
 import Register from './views/Register';
+import AutomationManager from './views/AutomationManager';
 import AlertMessage from './views/AlertMessage';
+import UnregisteredDevices from './views/UnregisteredDevices';
+import RoomManager from './views/RoomManager';
 import { turnOnDevice, turnOffDevice, registerUser, loginUser, logoutUser } from './api';
 
 function App() {
@@ -45,57 +48,59 @@ function App() {
 
   return (
       <Router>
-        <div className="d-flex justify-content-center align-items-center vh-100 bg-dark">
-          <div className="card" style={{ width: isLoggedIn ? '75%' : '400px' }}>
-            <div className="card-body">
-              <h1 className="text-center">Smart Home Control</h1>
-              <AlertMessage message={message} isError={isError} />
+        <div className="min-vh-100 bg-dark d-flex justify-content-center">
+          <div className="container py-5">
+            <div className="card mx-auto" style={{ maxWidth: isLoggedIn ? '100%' : '400px' }}>
+              <div className="card-body">
+                <h1 className="text-center">Smart Home Control</h1>
+                <AlertMessage message={message} isError={isError} />
 
-              <Routes>
-                {!isLoggedIn ? (
-                    <>
-                      <Route path="/" element={
-                        <>
-                          <Login
-                              username={username}
-                              setUsername={setUsername}
-                              password={password}
-                              setPassword={setPassword}
-                              handleLogin={handleLogin}
-                          />
-                          <Register
-                              registerUsername={registerUsername}
-                              setRegisterUsername={setRegisterUsername}
-                              registerPassword={registerPassword}
-                              setRegisterPassword={setRegisterPassword}
-                              handleRegister={async () => {
-                                try {
-                                  const response = await registerUser(registerUsername, registerPassword);
-                                  showMessage(response.data.message, false);
-                                  setUsername(registerUsername);
-                                  setPassword(registerPassword);
-                                } catch (error) {
-                                  showMessage('Chyba při registraci: ' + (error.response?.data?.message || error.message), true);
-                                }
-                              }}
-                          />
-                        </>
-                      } />
-                      <Route path="*" element={<Navigate to="/" />} />
-                    </>
-                ) : (
-                    <>
-                      <Route path="/" element={<Dashboard handleLogout={handleLogout} />} />
-                      <Route path="/devices" element={<ConnectedDevices />} />
-                      <Route path="/devicecontrol" element={<DeviceControl
-                          turnOnDevice={turnOnDevice}
-                          turnOffDevice={turnOffDevice}
-                      />} />
-                      <Route path="*" element={<Navigate to="/" />} />
-                    </>
-                )}
-              </Routes>
+                <Routes>
+                  {!isLoggedIn ? (
+                      <>
+                        <Route path="/" element={
+                          <>
+                            <Login
+                                username={username}
+                                setUsername={setUsername}
+                                password={password}
+                                setPassword={setPassword}
+                                handleLogin={handleLogin}
+                            />
+                            <Register
+                                registerUsername={registerUsername}
+                                setRegisterUsername={setRegisterUsername}
+                                registerPassword={registerPassword}
+                                setRegisterPassword={setRegisterPassword}
+                                handleRegister={async () => {
+                                  try {
+                                    const response = await registerUser(registerUsername, registerPassword);
+                                    showMessage(response.data.message, false);
+                                    setUsername(registerUsername);
+                                    setPassword(registerPassword);
+                                  } catch (error) {
+                                    showMessage('Chyba při registraci: ' + (error.response?.data?.message || error.message), true);
+                                  }
+                                }}
+                            />
+                          </>
+                        } />
+                        <Route path="*" element={<Navigate to="/" />} />
+                      </>
+                  ) : (
+                      <>
+                        <Route path="/" element={<Dashboard handleLogout={handleLogout} />} />
+                        <Route path="/devices" element={<ConnectedDevices />} />
+                        <Route path="/devicecontrol" element={<DeviceControl turnOnDevice={turnOnDevice} turnOffDevice={turnOffDevice} />} />
+                        <Route path="/rooms" element={<RoomManager />} />
+                        <Route path="/automation" element={<AutomationManager />} />
+                        <Route path="/add-device" element={<UnregisteredDevices />} />
+                        <Route path="*" element={<Navigate to="/" />} />
+                      </>
+                  )}
+                </Routes>
 
+              </div>
             </div>
           </div>
         </div>
