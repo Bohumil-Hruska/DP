@@ -123,30 +123,6 @@ client.on('message', function (topic, message) {
     }
 });
 
-app.post('/api/spotify/play', async (req, res) => {
-    const { accessToken, deviceId, trackUri } = req.body;
-
-    const response = await fetch(`https://api.spotify.com/v1/me/player/play?device_id=${deviceId}`, {
-        method: 'PUT',
-        headers: {
-            'Authorization': `Bearer ${accessToken}`,
-            'Content-Type': 'application/json',
-        },
-        body: JSON.stringify({
-            uris: [trackUri]
-        })
-    });
-
-    if (response.ok) {
-        res.json({ success: true });
-    } else {
-        const error = await response.json();
-        console.error('Spotify Play Error:', error);
-        res.status(500).json({ error });
-    }
-});
-
-
 // Přesměrování uživatele na Spotify login
 app.get('/api/spotify/login', (req, res) => {
     const scope = 'user-read-playback-state user-modify-playback-state';
@@ -183,7 +159,12 @@ app.get('/callback', async (req, res) => {
     const data = await response.json();
     console.log('🎵 Spotify token:', data);
 
-    res.send(`<pre>${JSON.stringify(data, null, 2)}</pre>`);
+    res.send(`
+  <script>
+    localStorage.setItem('spotifyToken', '${data.access_token}');
+    window.location.href = '/spotify-player';
+  </script>
+`);
 });
 
 
