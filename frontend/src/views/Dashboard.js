@@ -12,6 +12,22 @@ const Dashboard = ({handleLogout}) => {
 
     const navigate = useNavigate();
 
+    const [devices, setDevices] = useState([]);
+
+    useEffect(() => {
+        const fetchDevices = async () => {
+            try {
+                const response = await axios.get('/api/devices');
+                setDevices(response.data);
+            } catch (error) {
+                console.error('Chyba při načítání zařízení:', error);
+            }
+        };
+
+        fetchDevices();
+    }, []);
+
+
     const handleLogoutClick = () => {
         handleLogout();
         navigate('/');
@@ -123,7 +139,7 @@ const Dashboard = ({handleLogout}) => {
                             <div>
                                 <FaWifi className="text-primary mb-3" size={50}/>
                                 <h5 className="card-title">Zařízení</h5>
-                                <p className="card-text">12 připojených</p>
+                                <p className="card-text">{devices.length} připojených</p>
                             </div>
                             <Link to="/devices" className="btn btn-primary mt-3">
                                 Zobrazit seznam

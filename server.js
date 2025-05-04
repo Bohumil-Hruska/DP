@@ -89,7 +89,7 @@ client.on('message', function (topic, message) {
             id: deviceId,
             name: payload.name || deviceId,
             type: payload.type || 'unknown', // Pokud zařízení pošle typ, uložíme ho
-            value: payload.value || '-',     // Volitelné pole (např. teplota, stav)
+            value: payload.value || payload.state || payload.status || '-',
             status: 'online',
             lastSeen: new Date().toISOString()
         };
