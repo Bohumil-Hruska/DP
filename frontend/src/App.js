@@ -100,7 +100,7 @@ function App() {
                         <Route path="/add-device" element={<UnregisteredDevices />} />
                         <Route path="/bluetooth" element={<BluetoothDevices />} />
                         <Route path="/callback" element={<SpotifyCallback />} />
-                        <Route path="/spotify/success" element={<SpotifyPlayer />} />
+                        <Route path="/spotify-player" element={<SpotifyPlayer />} />
                         <Route path="*" element={<Navigate to="/" />} />
                       </>
                   )}
