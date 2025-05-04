@@ -14,6 +14,14 @@ const Dashboard = ({handleLogout}) => {
 
     const [devices, setDevices] = useState([]);
 
+    const [spotifyLoggedIn, setSpotifyLoggedIn] = useState(false);
+
+    useEffect(() => {
+        axios.get('/api/spotify/status', { withCredentials: true })
+            .then(res => setSpotifyLoggedIn(res.data.loggedIn))
+            .catch(() => setSpotifyLoggedIn(false));
+    }, []);
+
     useEffect(() => {
         const fetchDevices = async () => {
             try {
@@ -162,6 +170,7 @@ const Dashboard = ({handleLogout}) => {
                                 <Link to="/api/spotify/login" className="btn btn-success">
                                     Připojit Spotify
                                 </Link>
+                                <p>{spotifyLoggedIn ? "Spotify je připojeno ✅" : "Spotify není připojeno ❌"}</p>
                             </div>
                         </div>
                     </div>

@@ -168,6 +168,14 @@ app.get('/callback', async (req, res) => {
     }
 });
 
+app.get('/api/spotify/status', (req, res) => {
+    const token = req.cookies?.spotify_access_token;
+    if (!token) {
+        return res.status(401).json({ loggedIn: false });
+    }
+    res.json({ loggedIn: true });
+});
+
 app.get('/api/spotify/devices', async (req, res) => {
     const token = req.cookies.spotify_access_token;
     if (!token) return res.status(401).json({ error: 'Neautorizováno' });
