@@ -10,6 +10,8 @@ import AlertMessage from './views/AlertMessage';
 import UnregisteredDevices from './views/UnregisteredDevices';
 import RoomManager from './views/RoomManager';
 import BluetoothDevices from './views/BluetoothDevices';
+import SpotifyCallback from './views/SpotifyCallback'; // pokud ještě nemáš
+import SpotifyPlayer from "./views/SpotifyPlayer";
 import { turnOnDevice, turnOffDevice, registerUser, loginUser, logoutUser } from './api';
 
 function App() {
@@ -97,6 +99,8 @@ function App() {
                         <Route path="/automation" element={<AutomationManager />} />
                         <Route path="/add-device" element={<UnregisteredDevices />} />
                         <Route path="/bluetooth" element={<BluetoothDevices />} />
+                        <Route path="/callback" element={<SpotifyCallback />} />
+                        <Route path="/spotify/success" element={<SpotifyPlayer />} />
                         <Route path="*" element={<Navigate to="/" />} />
                       </>
                   )}

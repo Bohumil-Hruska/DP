@@ -137,6 +137,7 @@ app.get('/api/spotify/login', (req, res) => {
 });
 
 // Získání přístupového tokenu
+// server.js
 app.get('/callback', async (req, res) => {
     const code = req.query.code;
 
@@ -156,11 +157,13 @@ app.get('/callback', async (req, res) => {
     });
 
     const data = await response.json();
-    console.log('Token získán:', data);
+    console.log('Spotify token:', data);
 
-    // Ulož access token (např. do session, cookies, DB) a přesměruj zpět do UI
-    res.redirect('/'); // nebo kdekoliv ve frontend
+    // můžeš tu access token uložit do paměti nebo DB podle potřeby
+
+    res.json({ success: true });
 });
+
 
 app.get('/api/bluetooth-devices', authenticate, (req, res) => {
     try {
