@@ -254,14 +254,15 @@ const Dashboard = ({handleLogout}) => {
                 </div>
 
                 <div className="col">
-                    <div className="card text-center shadow h-100">
+                    <div className="card bg-dark text-white text-center shadow-sm rounded-4 h-100"
+                         style={{minHeight: '230px'}}>
                         <div className="card-body d-flex flex-column justify-content-between">
                             <div>
-                                <FaMicrophone className="text-primary mb-3" size={50}/>
+                                <FaMicrophone className="text-info mb-3" size={40}/>
                                 <h5 className="card-title">Hlasové ovládání</h5>
                                 <p className="card-text">Ovládej domácnost hlasem</p>
                             </div>
-                            <Link to="/voice-control" className="btn btn-primary mt-3">
+                            <Link to="/voice-control" className="btn btn-info">
                                 Spustit mikrofon
                             </Link>
                         </div>
