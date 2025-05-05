@@ -338,6 +338,69 @@ app.get('/api/spotify/refresh', async (req, res) => {
     res.status(400).json({ error: 'Nepodařilo se obnovit token' });
 });
 
+app.post('/api/voice/execute', authenticate, async (req, res) => {
+    const { command } = req.body;
+
+    if (!command) {
+        return res.status(400).json({ message: 'Chybí příkaz.' });
+    }
+
+    // Zjednodušené rozpoznání hudebního příkazu
+    if (/přehraj|pusti|play/i.test(command)) {
+        const token = req.cookies.spotify_access_token;
+        if (!token) return res.status(401).json({ error: 'Spotify není přihlášené.' });
+
+        try {
+            // Extrahuj název skladby např. „přehraj Bohemian Rhapsody od Queen“
+            const query = command.replace(/.*?(přehraj|pusti|play)\s*/i, '');
+
+            // Najdi skladbu
+            const searchRes = await fetch(`https://api.spotify.com/v1/search?q=${encodeURIComponent(query)}&type=track&limit=1`, {
+                headers: { Authorization: `Bearer ${token}` }
+            });
+
+            const searchData = await searchRes.json();
+            const track = searchData.tracks?.items?.[0];
+
+            if (!track) {
+                return res.json({ message: `Skladba "${query}" nebyla nalezena.` });
+            }
+
+            // Získej zařízení
+            const deviceRes = await fetch(`https://api.spotify.com/v1/me/player/devices`, {
+                headers: { Authorization: `Bearer ${token}` }
+            });
+
+            const devicesData = await deviceRes.json();
+            const activeDevice = devicesData.devices?.[0];
+
+            if (!activeDevice) {
+                return res.status(400).json({ message: 'Nebyl nalezen žádný aktivní Spotify přehrávač.' });
+            }
+
+            // Spusť přehrávání
+            await fetch(`https://api.spotify.com/v1/me/player/play?device_id=${activeDevice.id}`, {
+                method: 'PUT',
+                headers: {
+                    'Authorization': `Bearer ${token}`,
+                    'Content-Type': 'application/json',
+                },
+                body: JSON.stringify({ uris: [track.uri] })
+            });
+
+            return res.json({ message: `Přehrávám: ${track.name} od ${track.artists.map(a => a.name).join(', ')}` });
+
+        } catch (err) {
+            console.error(err);
+            return res.status(500).json({ message: 'Chyba při přehrávání.' });
+        }
+    }
+
+    // Fallback pro nehudební příkazy (např. zařízení)
+    return res.json({ message: `Příkaz '${command}' byl přijat.` });
+});
+
+
 
 
 
