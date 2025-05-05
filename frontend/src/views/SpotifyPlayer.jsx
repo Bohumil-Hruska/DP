@@ -78,7 +78,6 @@ const SpotifyPlayer = ({ showMessage }) => {
                 contextUri: contextUri || null
             }, { withCredentials: true });
 
-            showMessage('Přehrávání spuštěno!', false);
             fetchCurrentTrack();
         } catch {
             showMessage('Nepodařilo se spustit přehrávání.', true);
@@ -175,7 +174,6 @@ const SpotifyPlayer = ({ showMessage }) => {
                                         }, { withCredentials: true });
                                     }
 
-                                    showMessage(`Spuštěno: ${displayName}`, false);
                                     fetchCurrentTrack();
 
                                     // 🧼 Vymazání hledání a výsledků:

@@ -107,20 +107,21 @@ const Dashboard = ({handleLogout}) => {
     return (
         <div className="container py-5 text-white">
             <header className="d-flex justify-content-between align-items-center mb-4 flex-wrap">
-                <div className="d-flex align-items-center">
-                    <h1 className="h3 mb-0 me-3">Smart Home Control</h1>
+                <div className="d-flex align-items-center gap-2">
+                    <h1 className="h4 mb-0">Smart Home Control</h1>
 
-                    {/* Ikona odhlášení pro malé displeje */}
+                    {/* Ikona pouze na mobilu */}
                     <button
                         onClick={handleLogoutClick}
                         className="btn btn-sm btn-outline-light d-inline d-md-none"
                         title="Odhlásit se"
+                        style={{lineHeight: '1'}}
                     >
                         🔓
                     </button>
                 </div>
 
-                {/* Tlačítko pro větší obrazovky */}
+                {/* Tlačítko na větších displejích */}
                 <button
                     onClick={handleLogoutClick}
                     className="btn btn-info d-none d-md-inline"
@@ -183,7 +184,7 @@ const Dashboard = ({handleLogout}) => {
                 {/* Zařízení */}
                 <div className="col">
                     <div className="card bg-dark text-white text-center shadow-sm rounded-4 h-100">
-                        <div className="card-body d-flex flex-column justify-content-between">
+                        <div className="card-body d-flex flex-column justify-content-between" style={{ minHeight: '230px' }}>
                             <div>
                                 <FaWifi className="text-info mb-3" size={40}/>
                                 <h5 className="card-title">Zařízení</h5>
@@ -199,7 +200,7 @@ const Dashboard = ({handleLogout}) => {
 
                 {/* Místnosti */}
                 <div className="col">
-                    <div className="card bg-dark text-white text-center shadow-sm rounded-4 h-100">
+                    <div className="card bg-dark text-white text-center shadow-sm rounded-4 h-100" style={{ minHeight: '230px' }}>
                         <div className="card-body d-flex flex-column justify-content-between">
                             <div>
                                 <FaHome className="text-info mb-3" size={40}/>
@@ -213,7 +214,7 @@ const Dashboard = ({handleLogout}) => {
 
                 {/* Automatizace */}
                 <div className="col">
-                    <div className="card bg-dark text-white text-center shadow-sm rounded-4 h-100">
+                    <div className="card bg-dark text-white text-center shadow-sm rounded-4 h-100" style={{ minHeight: '230px' }}>
                         <div className="card-body d-flex flex-column justify-content-between">
                             <div>
                                 <FaClock className="text-info mb-3" size={40}/>
@@ -227,7 +228,7 @@ const Dashboard = ({handleLogout}) => {
 
                 {/* Služby - Spotify */}
                 <div className="col">
-                    <div className="card bg-dark text-white text-center shadow-sm rounded-4 h-100">
+                    <div className="card bg-dark text-white text-center shadow-sm rounded-4 h-100" style={{ minHeight: '230px' }}>
                         <div className="card-body d-flex flex-column justify-content-between">
                             <div>
                                 <FaWifi className="text-info mb-3" size={40}/>
@@ -250,7 +251,7 @@ const Dashboard = ({handleLogout}) => {
 
                 {/* Nové zařízení */}
                 <div className="col">
-                    <div className="card bg-dark text-white text-center shadow-sm rounded-4 h-100">
+                    <div className="card bg-dark text-white text-center shadow-sm rounded-4 h-100" style={{ minHeight: '230px' }}>
                         <div className="card-body d-flex flex-column justify-content-between">
                             <div>
                                 <FaPlusSquare className="text-info mb-3" size={40}/>
