@@ -41,6 +41,8 @@ const { execSync } = require('child_process');
 
 const app = express();
 app.use(cookieParser());
+app.use(cors());
+app.use(bodyParser.json());
 const PORT = 3000;
 
 
@@ -257,8 +259,7 @@ app.get('/api/devices', (req, res) => {
 });
 
 // Middleware
-app.use(cors());
-app.use(bodyParser.json());
+
 
 // Vrátí všechny místnosti
 app.get('/api/rooms', authenticate, (req, res) => {
