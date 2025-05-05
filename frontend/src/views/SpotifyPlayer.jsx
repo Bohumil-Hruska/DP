@@ -73,18 +73,11 @@ const SpotifyPlayer = ({ showMessage }) => {
 
     const play = async () => {
         try {
-            if (trackUri && !contextUri) {
-                // 🧠 Posíláme příkaz místo přímého přehrání
-                const command = `zahraj ${currentTrack?.item?.name} od ${currentTrack?.item?.artists.map(a => a.name).join(', ')}`;
-                await axios.post('/api/voice/execute', { command }, { withCredentials: true });
-            } else {
-                // 🎧 Přehraj album nebo playlist
-                await axios.post('/api/spotify/play', {
-                    deviceId: selectedDevice,
-                    trackUri: null,
-                    contextUri
-                }, { withCredentials: true });
-            }
+            await axios.post('/api/spotify/play', {
+                deviceId: selectedDevice,
+                trackUri: trackUri || (currentTrack?.item?.uri ?? null),
+                contextUri: contextUri || null
+            }, { withCredentials: true });
 
             fetchCurrentTrack();
         } catch {
