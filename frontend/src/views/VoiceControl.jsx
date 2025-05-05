@@ -37,7 +37,7 @@ const VoiceControl = ({ showMessage }) => {
         formData.append('audio', blob, 'recording.wav');
 
         try {
-            const res = await axios.post('http://192.168.0.194:5055/recognize', formData);
+            const res = await axios.post('/voice-api/recognize', formData);
             if (res.data.text) {
                 setRecognized(res.data.text);
                 sendCommandToNode(res.data.text);
