@@ -9,27 +9,51 @@ const VoiceControl = ({ showMessage }) => {
     const startRecording = async () => {
         setRecording(true);
         setRecognized('');
+
+        let originalVolume = 50; // výchozí hlasitost pro obnovení
+
         try {
+            const volumeRes = await axios.get('/api/spotify/volume', { withCredentials: true });
+            originalVolume = volumeRes.data.volume;
+
+            // Ztišit Spotify přehrávač na minimum
+            await axios.post('/api/spotify/volume', { volume: 5 }, { withCredentials: true });
+
             const stream = await navigator.mediaDevices.getUserMedia({ audio: true });
             const mediaRecorder = new MediaRecorder(stream);
             const chunks = [];
 
             mediaRecorder.ondataavailable = (e) => chunks.push(e.data);
+
             mediaRecorder.onstop = () => {
                 const blob = new Blob(chunks, { type: 'audio/webm' });
                 stream.getTracks().forEach(track => track.stop());
-                sendAudioToPython(blob);
+                handleAudio(blob); // Zavoláme async funkci mimo onstop
             };
 
             mediaRecorder.start();
+
+            // Ukončit po 4 sekundách
             setTimeout(() => {
                 mediaRecorder.stop();
                 setRecording(false);
-            }, 4000); // 4 sekundy
+            }, 4000);
+
         } catch (e) {
             showMessage('Nelze získat mikrofon: ' + e.message, true);
             setRecording(false);
         }
+
+        // Async zpracování a obnovení hlasitosti
+        const handleAudio = async (blob) => {
+            try {
+                await sendAudioToPython(blob);
+            } catch (err) {
+                showMessage('Chyba při odeslání audia.', true);
+            } finally {
+                await axios.post('/api/spotify/volume', { volume: originalVolume }, { withCredentials: true });
+            }
+        };
     };
 
     const sendAudioToPython = async (blob) => {
