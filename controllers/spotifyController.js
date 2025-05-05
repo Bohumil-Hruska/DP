@@ -42,6 +42,16 @@ const callback = async (req, res) => {
                 sameSite: 'Strict',
                 maxAge: 3600 * 1000
             });
+
+            if (data.refresh_token) {
+                res.cookie('spotify_refresh_token', data.refresh_token, {
+                    httpOnly: true,
+                    secure: true,
+                    sameSite: 'Strict',
+                    maxAge: 30 * 24 * 60 * 60 * 1000 // 30 dní
+                });
+            }
+
             res.redirect('/');
         } else {
             console.error("Token získání selhalo:", data);

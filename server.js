@@ -15,6 +15,7 @@ const spotifyRoutes = require('./routes/spotify');
 const jwt = require('jsonwebtoken');
 const SECRET = process.env.JWT_SECRET;
 const authenticate = require('./middleware/authenticate');
+const ensureSpotifyToken = require('./middleware/spotifyAuth');
 
 
 const USERS_FILE = path.join(__dirname, 'users.json');
@@ -115,9 +116,7 @@ client.on('message', function (topic, message) {
 });
 
 app.get('/callback', spotifyController.callback);
-app.use('/api', spotifyRoutes);
-
-
+app.use('/api',ensureSpotifyToken, spotifyRoutes);
 app.use(voiceRoutes);
 
 app.get('/api/bluetooth-devices', authenticate, (req, res) => {
