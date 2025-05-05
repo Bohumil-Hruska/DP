@@ -78,7 +78,7 @@ const Dashboard = ({handleLogout}) => {
         <div className="container py-5 text-white">
             <header className="d-flex flex-column flex-md-row justify-content-between align-items-center mb-5">
                 <h1 className="display-4 text-center text-md-start mb-3 mb-md-0">SmartHome Dashboard</h1>
-                <button onClick={handleLogoutClick} className="btn btn-outline-light">Odhlásit se</button>
+                <button onClick={handleLogoutClick} className="btn btn-danger">Odhlásit se</button>
             </header>
 
             <p className="text-muted mb-4 text-center text-md-start">Přehled vaší chytré domácnosti</p>
@@ -95,10 +95,10 @@ const Dashboard = ({handleLogout}) => {
                                     <>
                                         <p className="card-text">{weather.city}: {weather.temp}°C</p>
                                         <img src={`https:${weather.icon}`} alt={weather.description} style={{ width: "80px" }} className="my-2" />
-                                        <p className="card-text text-muted">{weather.description}</p>
+                                        <p className="card-text text-info">{weather.description}</p>
                                     </>
                                 ) : (
-                                    <p className="text-muted">Načítání počasí...</p>
+                                    <p className="text-info">Načítání počasí...</p>
                                 )}
                             </div>
                         </div>
@@ -114,8 +114,8 @@ const Dashboard = ({handleLogout}) => {
                                 <h5 className="card-title">Zařízení</h5>
                                 <p className="card-text">{devices.length} připojených</p>
                             </div>
-                            <div>
-                                <Link to="/devices" className="btn btn-info mb-2">Zobrazit seznam</Link>
+                            <div className="d-flex justify-content-center gap-2 flex-wrap">
+                                <Link to="/devices" className="btn btn-info">Zobrazit seznam</Link>
                                 <Link to="/bluetooth" className="btn btn-outline-info">Bluetooth</Link>
                             </div>
                         </div>
@@ -162,7 +162,9 @@ const Dashboard = ({handleLogout}) => {
                             {spotifyLoggedIn ? (
                                 <>
                                     <p>Spotify je připojeno ✅</p>
-                                    <Link to="/spotify-player" className="btn btn-outline-info mt-2">Přehrávač</Link>
+                                    <Link to="/spotify-player" className="btn btn-info">
+                                        Přehrávač
+                                    </Link>
                                 </>
                             ) : (
                                 <a href="/api/spotify/login" className="btn btn-info">Připojit Spotify</a>
@@ -180,7 +182,7 @@ const Dashboard = ({handleLogout}) => {
                                 <h5 className="card-title">Nové zařízení</h5>
                                 <p className="card-text">Zaregistruj MQTT zařízení</p>
                             </div>
-                            <Link to="/add-device" className="btn btn-outline-info">Zaregistrovat</Link>
+                            <Link to="/add-device" className="btn btn-info">Zaregistrovat</Link>
                         </div>
                     </div>
                 </div>
