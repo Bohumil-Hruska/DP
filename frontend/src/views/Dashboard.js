@@ -171,6 +171,9 @@ const Dashboard = ({handleLogout}) => {
                                     Připojit Spotify
                                 </Link>
                                 <p>{spotifyLoggedIn ? "Spotify je připojeno ✅" : "Spotify není připojeno ❌"}</p>
+                                <Link to="/spotify-player" className="btn btn-outline-primary mt-2">
+                                    Otevřít Spotify přehrávač
+                                </Link>
                             </div>
                         </div>
                     </div>
