@@ -33,11 +33,23 @@ const SpotifyPlayer = ({ showMessage }) => {
     const fetchDevices = async () => {
         try {
             const res = await axios.get('/api/spotify/devices', { withCredentials: true });
-            setDevices(res.data.devices || []);
+            const availableDevices = res.data.devices || [];
+            setDevices(availableDevices);
+
+            const savedId = localStorage.getItem('spotifyDeviceId');
+            const found = availableDevices.find(d => d.id === savedId);
+
+            if (found) {
+                setSelectedDevice(savedId);
+            } else if (availableDevices.length > 0) {
+                setSelectedDevice(availableDevices[0].id); // fallback první dostupné
+            }
+
         } catch {
             showMessage('Nepodařilo se načíst zařízení.', true);
         }
     };
+
 
     const fetchCurrentTrack = async () => {
         try {
@@ -96,8 +108,14 @@ const SpotifyPlayer = ({ showMessage }) => {
             {/* Výběr zařízení */}
             <div className="mb-3">
                 <label className="form-label">Zařízení</label>
-                <select className="form-select" onChange={(e) => setSelectedDevice(e.target.value)}>
-                    <option value="">-- Vyber zařízení --</option>
+                <select
+                    className="form-select"
+                    value={selectedDevice}
+                    onChange={(e) => {
+                        setSelectedDevice(e.target.value);
+                        localStorage.setItem('spotifyDeviceId', e.target.value);
+                    }}
+                ><option value="">-- Vyber zařízení --</option>
                     {devices.map((d) => (
                         <option key={d.id} value={d.id}>{d.name}</option>
                     ))}
