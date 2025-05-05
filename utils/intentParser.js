@@ -4,13 +4,13 @@ function parseIntent(command) {
     // 👨‍🎤 Přehraj něco od interpreta — musí být první!
     const playArtist = text.match(/\b(zahraj|pusť|hraj|přehraj).*(?:něco)?\s+(?:od|od kapely|zpěváka)\s+(.+)/i);
     if (playArtist) {
-        return { type: 'play_top_by_artist', artist: playArtist[2], tts: `Přehrávám něco od ${playArtist[2]}` };
+        return { type: 'play_top_by_artist', artist: playArtist[2]};
     }
 
     // 🎧 Přehraj konkrétní skladbu
     const playTrack = text.match(/\b(zahraj|pusť|přehraj|hraj)\s+(.+)/i);
     if (playTrack) {
-        return { type: 'play_track', query: playTrack[2], tts: `Přehrávám skladbu ${playTrack[2]}` };
+        return { type: 'play_track', query: playTrack[2] };
     }
 
     // 📻 Playlist

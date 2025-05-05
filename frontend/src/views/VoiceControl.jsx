@@ -67,22 +67,12 @@ const VoiceControl = ({ showMessage }) => {
         }
     };
 
-    const speak = (text) => {
-        const utterance = new SpeechSynthesisUtterance(text);
-        utterance.lang = 'cs-CZ';
-        window.speechSynthesis.speak(utterance);
-    };
-
     const sendCommandToNode = async (text) => {
         try {
             const res = await axios.post('/api/voice/execute', { command: text }, { withCredentials: true });
-            const message = res.data.message || 'Příkaz zpracován.';
-            showMessage(message, false);
-            speak(message); // TTS odpověď
+            showMessage(res.data.message || 'Příkaz zpracován.', false);
         } catch (err) {
-            const errorMessage = 'Chyba při vykonávání příkazu.';
-            showMessage(errorMessage, true);
-            speak(errorMessage); // TTS odpověď
+            showMessage('Chyba při vykonávání příkazu.', true);
         }
     };
 

@@ -29,44 +29,29 @@ router.post('/api/voice/execute', async (req, res) => {
 
     switch (intent.type) {
         case 'play_track':
-            await handlePlayTrack(intent.query, token, res);
-            break;
+            return await handlePlayTrack(intent.query, token, res);
 
         case 'play_top_by_artist':
-            await handlePlayTopTrack(intent.artist, token, res);
-            break;
+            return await handlePlayTopTrack(intent.artist, token, res);
 
         case 'play_playlist':
-            await handlePlayPlaylist(intent.name, token, res);
-            break;
+            return await handlePlayPlaylist(intent.name, token, res);
 
         case 'volume':
-            await handleVolumeChange(intent.value, token, res);
-            break;
+            return await handleVolumeChange(intent.value, token, res);
 
         case 'pause':
-            await handlePause(token, res);
-            break;
+            return await handlePause(token, res);
 
         case 'resume':
-            await handleResume(token, res);
-            break;
+            return await handleResume(token, res);
 
         case 'next':
-            await handleNext(token, res);
-            break;
+            return await handleNext(token, res);
 
         default:
             return res.json({ message: 'Příkaz nerozpoznán nebo není podporován.' });
     }
-
-// 🔊 Odešli hlasovou odpověď (pokud byl příkaz úspěšný)
-    if (intent.tts) {
-        return res.json({ message: intent.tts });
-    } else {
-        return res.json({ message: 'Příkaz proveden.' });
-    }
-
 });
 
 module.exports = router;
