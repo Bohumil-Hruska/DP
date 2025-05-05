@@ -114,10 +114,8 @@ client.on('message', function (topic, message) {
     }
 });
 
-app.get('/api/spotify/login', spotifyController.login);
-app.get('/callback', spotifyController.callback);
-app.get('/api/spotify/status', spotifyController.status);
-app.use('/api/spotify', spotifyRoutes);
+app.use('/api', spotifyRoutes);
+
 
 app.use(voiceRoutes);
 
