@@ -1,5 +1,5 @@
 import React, { useEffect, useState } from 'react';
-import {FaTemperatureHigh, FaWifi, FaHome, FaClock, FaPlusSquare} from 'react-icons/fa';
+import {FaTemperatureHigh, FaWifi, FaHome, FaClock, FaPlusSquare, FaMicrophone} from 'react-icons/fa';
 import { Link } from 'react-router-dom';
 import axios from 'axios';
 import 'bootstrap/dist/css/bootstrap.min.css';
@@ -184,7 +184,8 @@ const Dashboard = ({handleLogout}) => {
                 {/* Zařízení */}
                 <div className="col">
                     <div className="card bg-dark text-white text-center shadow-sm rounded-4 h-100">
-                        <div className="card-body d-flex flex-column justify-content-between" style={{ minHeight: '230px' }}>
+                        <div className="card-body d-flex flex-column justify-content-between"
+                             style={{minHeight: '230px'}}>
                             <div>
                                 <FaWifi className="text-info mb-3" size={40}/>
                                 <h5 className="card-title">Zařízení</h5>
@@ -200,7 +201,8 @@ const Dashboard = ({handleLogout}) => {
 
                 {/* Místnosti */}
                 <div className="col">
-                    <div className="card bg-dark text-white text-center shadow-sm rounded-4 h-100" style={{ minHeight: '230px' }}>
+                    <div className="card bg-dark text-white text-center shadow-sm rounded-4 h-100"
+                         style={{minHeight: '230px'}}>
                         <div className="card-body d-flex flex-column justify-content-between">
                             <div>
                                 <FaHome className="text-info mb-3" size={40}/>
@@ -214,7 +216,8 @@ const Dashboard = ({handleLogout}) => {
 
                 {/* Automatizace */}
                 <div className="col">
-                    <div className="card bg-dark text-white text-center shadow-sm rounded-4 h-100" style={{ minHeight: '230px' }}>
+                    <div className="card bg-dark text-white text-center shadow-sm rounded-4 h-100"
+                         style={{minHeight: '230px'}}>
                         <div className="card-body d-flex flex-column justify-content-between">
                             <div>
                                 <FaClock className="text-info mb-3" size={40}/>
@@ -228,7 +231,8 @@ const Dashboard = ({handleLogout}) => {
 
                 {/* Služby - Spotify */}
                 <div className="col">
-                    <div className="card bg-dark text-white text-center shadow-sm rounded-4 h-100" style={{ minHeight: '230px' }}>
+                    <div className="card bg-dark text-white text-center shadow-sm rounded-4 h-100"
+                         style={{minHeight: '230px'}}>
                         <div className="card-body d-flex flex-column justify-content-between">
                             <div>
                                 <FaWifi className="text-info mb-3" size={40}/>
@@ -249,9 +253,25 @@ const Dashboard = ({handleLogout}) => {
                     </div>
                 </div>
 
+                <div className="col">
+                    <div className="card text-center shadow h-100">
+                        <div className="card-body d-flex flex-column justify-content-between">
+                            <div>
+                                <FaMicrophone className="text-primary mb-3" size={50}/>
+                                <h5 className="card-title">Hlasové ovládání</h5>
+                                <p className="card-text">Ovládej domácnost hlasem</p>
+                            </div>
+                            <Link to="/voice-control" className="btn btn-primary mt-3">
+                                Spustit mikrofon
+                            </Link>
+                        </div>
+                    </div>
+                </div>
+
                 {/* Nové zařízení */}
                 <div className="col">
-                    <div className="card bg-dark text-white text-center shadow-sm rounded-4 h-100" style={{ minHeight: '230px' }}>
+                    <div className="card bg-dark text-white text-center shadow-sm rounded-4 h-100"
+                         style={{minHeight: '230px'}}>
                         <div className="card-body d-flex flex-column justify-content-between">
                             <div>
                                 <FaPlusSquare className="text-info mb-3" size={40}/>
