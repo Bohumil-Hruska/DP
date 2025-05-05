@@ -16,6 +16,36 @@ const Dashboard = ({handleLogout}) => {
 
     const [spotifyLoggedIn, setSpotifyLoggedIn] = useState(false);
 
+    const [currentTrack, setCurrentTrack] = useState(null);
+
+    useEffect(() => {
+        const fetchTrack = async () => {
+            try {
+                const res = await axios.get('/api/spotify/current', { withCredentials: true });
+                setCurrentTrack(res.data);
+            } catch {
+                setCurrentTrack(null);
+            }
+        };
+
+        fetchTrack();
+        const interval = setInterval(fetchTrack, 10000); // refresh každých 10s
+        return () => clearInterval(interval);
+    }, []);
+
+    useEffect(() => {
+        const interval = setInterval(async () => {
+            try {
+                await axios.get('/api/spotify/refresh', { withCredentials: true });
+                console.log('Spotify token obnoven');
+            } catch (err) {
+                console.warn('Nepodařilo se obnovit token');
+            }
+        }, 50 * 60 * 1000); // každých 50 minut
+
+        return () => clearInterval(interval);
+    }, []);
+
     useEffect(() => {
         axios.get('/api/spotify/status', { withCredentials: true })
             .then(res => setSpotifyLoggedIn(res.data.loggedIn))
@@ -81,6 +111,12 @@ const Dashboard = ({handleLogout}) => {
                 <button onClick={handleLogoutClick} className="btn btn-danger">Odhlásit se</button>
             </header>
 
+            {currentTrack?.item && (
+                <p className="text-muted small">
+                    🎵 {currentTrack.item.name} – {currentTrack.item.artists.map(a => a.name).join(', ')}
+                </p>
+            )}
+
             <p className="text-muted mb-4 text-center text-md-start">Přehled vaší chytré domácnosti</p>
 
             <div className="row row-cols-1 row-cols-sm-2 row-cols-md-3 row-cols-lg-4 g-3">
@@ -116,7 +152,7 @@ const Dashboard = ({handleLogout}) => {
                             </div>
                             <div className="d-flex justify-content-center gap-2 flex-wrap">
                                 <Link to="/devices" className="btn btn-info">Zobrazit seznam</Link>
-                                <Link to="/bluetooth" className="btn btn-outline-info">Bluetooth</Link>
+                                <Link to="/bluetooth" className="btn btn-info">Bluetooth</Link>
                             </div>
                         </div>
                     </div>

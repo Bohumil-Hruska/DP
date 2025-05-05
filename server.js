@@ -306,6 +306,38 @@ app.get('/api/spotify/search', async (req, res) => {
     res.json(allItems);
 });
 
+app.get('/api/spotify/refresh', async (req, res) => {
+    const refreshToken = req.cookies.spotify_refresh_token;
+    if (!refreshToken) return res.status(401).json({ error: 'No refresh token' });
+
+    const response = await fetch('https://accounts.spotify.com/api/token', {
+        method: 'POST',
+        headers: {
+            'Authorization': 'Basic ' + Buffer.from(
+                process.env.SPOTIFY_CLIENT_ID + ':' + process.env.SPOTIFY_CLIENT_SECRET
+            ).toString('base64'),
+            'Content-Type': 'application/x-www-form-urlencoded'
+        },
+        body: querystring.stringify({
+            grant_type: 'refresh_token',
+            refresh_token: refreshToken
+        })
+    });
+
+    const data = await response.json();
+    if (data.access_token) {
+        res.cookie('spotify_access_token', data.access_token, {
+            httpOnly: true,
+            secure: true,
+            sameSite: 'Strict',
+            maxAge: 3600 * 1000
+        });
+        return res.json({ success: true });
+    }
+
+    res.status(400).json({ error: 'Nepodařilo se obnovit token' });
+});
+
 
 
 
