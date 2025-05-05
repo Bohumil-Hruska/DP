@@ -59,7 +59,7 @@ const status = (req, res) => {
     res.json({ loggedIn: true });
 };
 
-exports.currentTrack = async (req, res) => {
+const currentTrack = async (req, res) => {
     const token = req.cookies.spotify_access_token;
     if (!token) return res.status(401).json({ error: 'Not authenticated' });
 
@@ -72,7 +72,7 @@ exports.currentTrack = async (req, res) => {
     res.json(data);
 };
 
-exports.pause = async (req, res) => {
+const pause = async (req, res) => {
     const token = req.cookies.spotify_access_token;
     if (!token) return res.status(401).json({ error: 'Not authenticated' });
 
@@ -84,7 +84,7 @@ exports.pause = async (req, res) => {
     res.sendStatus(response.ok ? 204 : 500);
 };
 
-exports.next = async (req, res) => {
+const next = async (req, res) => {
     const token = req.cookies.spotify_access_token;
     if (!token) return res.status(401).json({ error: 'Not authenticated' });
 
@@ -96,7 +96,7 @@ exports.next = async (req, res) => {
     res.sendStatus(response.ok ? 204 : 500);
 };
 
-exports.getVolume = async (req, res) => {
+const getVolume = async (req, res) => {
     const token = req.cookies.spotify_access_token;
     if (!token) return res.status(401).json({ error: 'Spotify není přihlášeno.' });
 
@@ -113,7 +113,7 @@ exports.getVolume = async (req, res) => {
     }
 };
 
-exports.setVolume = async (req, res) => {
+const setVolume = async (req, res) => {
     const token = req.cookies.spotify_access_token;
     const { volume } = req.body;
     if (!token) return res.status(401).json({ error: 'Not authenticated' });
@@ -126,7 +126,7 @@ exports.setVolume = async (req, res) => {
     res.sendStatus(response.ok ? 204 : 500);
 };
 
-exports.getDevices = async (req, res) => {
+const getDevices = async (req, res) => {
     const token = req.cookies.spotify_access_token;
     if (!token) return res.status(401).json({ error: 'Neautorizováno' });
 
@@ -137,7 +137,7 @@ exports.getDevices = async (req, res) => {
     res.json(data);
 };
 
-exports.play = async (req, res) => {
+const play = async (req, res) => {
     const token = req.cookies.spotify_access_token;
     const { deviceId, trackUri, contextUri } = req.body;
 
@@ -167,7 +167,7 @@ exports.play = async (req, res) => {
     }
 };
 
-exports.search = async (req, res) => {
+const search = async (req, res) => {
     const token = req.cookies.spotify_access_token;
     const query = req.query.q;
 
@@ -193,5 +193,13 @@ exports.search = async (req, res) => {
 module.exports = {
     login,
     callback,
-    status
+    status,
+    currentTrack,
+    pause,
+    next,
+    getVolume,
+    setVolume,
+    getDevices,
+    play,
+    search
 };
