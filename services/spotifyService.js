@@ -14,7 +14,6 @@ async function getActiveDeviceId(token) {
 // ▶ Přehraj konkrétní skladbu
 async function handlePlayTrack(query, token, res) {
     try {
-        // 🔍 Najdi skladbu podle názvu
         const search = await fetch(`https://api.spotify.com/v1/search?q=${encodeURIComponent(query)}&type=track&limit=1`, {
             headers: { Authorization: `Bearer ${token}` }
         });
@@ -23,7 +22,6 @@ async function handlePlayTrack(query, token, res) {
 
         if (!track) return res.json({ message: `Skladba "${query}" nebyla nalezena.` });
 
-        // 🔁 Získej doporučení (radio based on track)
         const recRes = await fetch(`https://api.spotify.com/v1/recommendations?seed_tracks=${track.id}&limit=20`, {
             headers: { Authorization: `Bearer ${token}` }
         });
