@@ -9,6 +9,7 @@ const fs = require('fs');
 const querystring = require('querystring');
 const fetch = require('node-fetch');
 const cookieParser = require('cookie-parser');
+const voiceRoutes = require('./routes/voice');
 
 
 
@@ -338,71 +339,7 @@ app.get('/api/spotify/refresh', async (req, res) => {
     res.status(400).json({ error: 'Nepodařilo se obnovit token' });
 });
 
-app.post('/api/voice/execute', authenticate, async (req, res) => {
-    const { command } = req.body;
-
-    if (!command) {
-        return res.status(400).json({ message: 'Chybí příkaz.' });
-    }
-
-    const token = req.cookies.spotify_access_token;
-    if (!token) return res.status(401).json({ error: 'Spotify není přihlášené.' });
-
-    // 📌 Rozpoznání "hudebního příkazu"
-    const playCommandRegex = /\b(zahraj|hraj|pusť|přehraj)\b\s*(.+)?/i;
-    const match = command.match(playCommandRegex);
-
-    if (match) {
-        const query = match[2]; // např. "bohemian rhapsody"
-        if (!query) return res.status(400).json({ message: 'Chybí název skladby.' });
-
-        try {
-            // 🔍 Najdi skladbu
-            const searchRes = await fetch(`https://api.spotify.com/v1/search?q=${encodeURIComponent(query)}&type=track&limit=1`, {
-                headers: { Authorization: `Bearer ${token}` }
-            });
-
-            const searchData = await searchRes.json();
-            const track = searchData.tracks?.items?.[0];
-
-            if (!track) {
-                return res.json({ message: `Skladba "${query}" nebyla nalezena.` });
-            }
-
-            // 🎧 Získej zařízení
-            const deviceRes = await fetch(`https://api.spotify.com/v1/me/player/devices`, {
-                headers: { Authorization: `Bearer ${token}` }
-            });
-
-            const devicesData = await deviceRes.json();
-            const activeDevice = devicesData.devices?.[0];
-
-            if (!activeDevice) {
-                return res.status(400).json({ message: 'Nebyl nalezen žádný aktivní Spotify přehrávač.' });
-            }
-
-            // ▶ Spusť přehrávání
-            await fetch(`https://api.spotify.com/v1/me/player/play?device_id=${activeDevice.id}`, {
-                method: 'PUT',
-                headers: {
-                    'Authorization': `Bearer ${token}`,
-                    'Content-Type': 'application/json',
-                },
-                body: JSON.stringify({ uris: [track.uri] })
-            });
-
-            return res.json({ message: `▶ Přehrávám: ${track.name} od ${track.artists.map(a => a.name).join(', ')}` });
-
-        } catch (err) {
-            console.error(err);
-            return res.status(500).json({ message: 'Chyba při přehrávání skladby.' });
-        }
-    }
-
-
-    return res.json({ message: `Příkaz "${command}" byl přijat, ale nebyl rozpoznán jako hudební.` });
-});
-
+app.use(voiceRoutes);
 
 app.get('/api/bluetooth-devices', authenticate, (req, res) => {
     try {
