@@ -76,11 +76,13 @@ const VoiceControl = ({ showMessage }) => {
     const sendCommandToNode = async (text) => {
         try {
             const res = await axios.post('/api/voice/execute', { command: text }, { withCredentials: true });
-            showMessage(res.data.message || 'Příkaz zpracován.', false);
+            const message = res.data.message || 'Příkaz zpracován.';
+            showMessage(message, false);
             speak(message); // TTS odpověď
         } catch (err) {
-            showMessage('Chyba při vykonávání příkazu.', true);
-            speak(message); // TTS odpověď
+            const errorMessage = 'Chyba při vykonávání příkazu.';
+            showMessage(errorMessage, true);
+            speak(errorMessage); // TTS odpověď
         }
     };
 
