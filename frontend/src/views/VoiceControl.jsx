@@ -1,5 +1,6 @@
 import React, { useState } from 'react';
 import axios from 'axios';
+import {Link} from "react-router-dom";
 
 const VoiceControl = ({ showMessage }) => {
     const [recording, setRecording] = useState(false);
@@ -10,13 +11,8 @@ const VoiceControl = ({ showMessage }) => {
         setRecording(true);
         setRecognized('');
 
-        let originalVolume = 50; // výchozí hlasitost pro obnovení
-
         try {
-            const volumeRes = await axios.get('/api/spotify/volume', { withCredentials: true });
-            originalVolume = volumeRes.data.volume;
-
-            // Ztišit Spotify přehrávač na minimum
+            // ⚠️ Vždy ztiš na pevnou hodnotu 5
             await axios.post('/api/spotify/volume', { volume: 5 }, { withCredentials: true });
 
             const stream = await navigator.mediaDevices.getUserMedia({ audio: true });
@@ -25,10 +21,18 @@ const VoiceControl = ({ showMessage }) => {
 
             mediaRecorder.ondataavailable = (e) => chunks.push(e.data);
 
-            mediaRecorder.onstop = () => {
+            mediaRecorder.onstop = async () => {
                 const blob = new Blob(chunks, { type: 'audio/webm' });
                 stream.getTracks().forEach(track => track.stop());
-                handleAudio(blob); // Zavoláme async funkci mimo onstop
+
+                try {
+                    await sendAudioToPython(blob);
+                } catch (err) {
+                    showMessage('Chyba při odeslání audia.', true);
+                } finally {
+                    // ✅ Vždy nastav zpět na 50
+                    await axios.post('/api/spotify/volume', { volume: 50 }, { withCredentials: true });
+                }
             };
 
             mediaRecorder.start();
@@ -43,18 +47,8 @@ const VoiceControl = ({ showMessage }) => {
             showMessage('Nelze získat mikrofon: ' + e.message, true);
             setRecording(false);
         }
-
-        // Async zpracování a obnovení hlasitosti
-        const handleAudio = async (blob) => {
-            try {
-                await sendAudioToPython(blob);
-            } catch (err) {
-                showMessage('Chyba při odeslání audia.', true);
-            } finally {
-                await axios.post('/api/spotify/volume', { volume: originalVolume }, { withCredentials: true });
-            }
-        };
     };
+
 
     const sendAudioToPython = async (blob) => {
         const formData = new FormData();
@@ -85,6 +79,7 @@ const VoiceControl = ({ showMessage }) => {
     return (
         <div className="container py-4">
             <h2 className="mb-3">🎙️ Hlasové ovládání</h2>
+            <Link to="/" className="btn btn-secondary">Zpět na Dashboard</Link>
 
             <button className="btn btn-primary mb-3" onClick={startRecording} disabled={recording}>
                 {recording ? '🎤 Nahrávám...' : '🎙️ Spustit nahrávání'}
