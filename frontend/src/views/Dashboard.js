@@ -175,9 +175,9 @@ const Dashboard = ({handleLogout}) => {
                                         </Link>
                                     </>
                                 ) : (
-                                    <Link to="/api/spotify/login" className="btn btn-success">
+                                    <a href="/api/spotify/login" className="btn btn-success">
                                         Připojit Spotify
-                                    </Link>
+                                    </a>
                                 )}
                             </div>
                         </div>

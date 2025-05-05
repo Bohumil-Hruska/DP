@@ -174,7 +174,7 @@ const SpotifyPlayer = ({ showMessage }) => {
                     );
                 })}
 
-            
+
 
             {/* Právě přehráváno */}
             {currentTrack && currentTrack.item ? (
