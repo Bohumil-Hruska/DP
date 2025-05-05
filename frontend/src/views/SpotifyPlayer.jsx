@@ -62,9 +62,10 @@ const SpotifyPlayer = ({ showMessage }) => {
         try {
             await axios.post('/api/spotify/play', {
                 deviceId: selectedDevice,
-                trackUri: contextUri ? null : trackUri,
-                contextUri: contextUri || null,
+                trackUri: trackUri || (currentTrack?.item?.uri ?? null),
+                contextUri: contextUri || null
             }, { withCredentials: true });
+
             showMessage('Přehrávání spuštěno!', false);
             fetchCurrentTrack();
         } catch {
