@@ -77,9 +77,11 @@ const VoiceControl = ({ showMessage }) => {
     };
 
     return (
-        <div className="container py-4">
-            <h2 className="mb-3">🎙️ Hlasové ovládání</h2>
-            <Link to="/" className="btn btn-secondary">Zpět na Dashboard</Link>
+        <div className="container py-5">
+            <div className="d-flex justify-content-between align-items-center mb-4">
+                <h2 className="mb-0">Hlasové ovládání</h2>
+                <Link to="/" className="btn btn-secondary">Zpět na Dashboard</Link>
+            </div>
 
             <button className="btn btn-primary mb-3" onClick={startRecording} disabled={recording}>
                 {recording ? '🎤 Nahrávám...' : '🎙️ Spustit nahrávání'}
