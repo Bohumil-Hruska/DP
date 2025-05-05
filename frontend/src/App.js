@@ -12,6 +12,7 @@ import RoomManager from './views/RoomManager';
 import BluetoothDevices from './views/BluetoothDevices';
 import { turnOnDevice, turnOffDevice, registerUser, loginUser, logoutUser } from './api';
 import SpotifyPlayer from "./views/SpotifyPlayer";
+import VoiceControl from "./views/VoiceControl";
 
 function App() {
   const [isLoggedIn, setIsLoggedIn] = useState(false);
@@ -99,6 +100,7 @@ function App() {
                         <Route path="/add-device" element={<UnregisteredDevices />} />
                         <Route path="/bluetooth" element={<BluetoothDevices />} />
                         <Route path="/spotify-player" element={<SpotifyPlayer showMessage={showMessage} />} />
+                        <Route path="/voice-control" element={<VoiceControl showMessage={showMessage} />} />
                         <Route path="*" element={<Navigate to="/" />} />
                       </>
                   )}
