@@ -16,7 +16,7 @@ const VoiceControl = ({ showMessage }) => {
 
             mediaRecorder.ondataavailable = (e) => chunks.push(e.data);
             mediaRecorder.onstop = () => {
-                const blob = new Blob(chunks, { type: 'audio/wav' });
+                const blob = new Blob(chunks, { type: 'audio/webm' });
                 stream.getTracks().forEach(track => track.stop());
                 sendAudioToPython(blob);
             };
