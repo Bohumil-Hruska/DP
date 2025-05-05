@@ -153,34 +153,56 @@ const SpotifyPlayer = ({ showMessage }) => {
 
             {/* Tlačítko přehrát */}
             {(trackUri || contextUri) && (
-                <>
+
                     <button className="btn btn-success mb-3" onClick={play}>▶ Přehrát</button>
-                    <SpotifyEmbed uri={trackUri || contextUri} />
-                </>
+
             )}
 
             {/* Právě přehráváno */}
             {currentTrack && currentTrack.item ? (
                 <div className="card p-4">
-                    <h4>Právě hraje:</h4>
-                    <p><strong>{currentTrack.item.name}</strong> – {currentTrack.item.artists.map(a => a.name).join(', ')}</p>
-                    <img src={currentTrack.item.album.images[0].url} alt="cover" width="200" />
-                    <div className="mt-3">
-                        <button className="btn btn-warning me-2" onClick={pause}>⏸ Pauza</button>
-                        <button className="btn btn-info" onClick={next}>⏭ Další</button>
-                    </div>
-                    <div className="mt-3">
-                        <label>Hlasitost: {volume}%</label>
-                        <input
-                            type="range"
-                            min="0"
-                            max="100"
-                            value={volume}
-                            onChange={changeVolume}
-                            className="form-range"
+                    <h4 className="mb-3">Právě hraje:</h4>
+                    <div className="d-flex align-items-center">
+                        <img
+                            src={currentTrack.item.album.images[0].url}
+                            alt="cover"
+                            width="100"
+                            height="100"
+                            className="me-3 rounded shadow"
                         />
+                        <div>
+                            <h5 className="mb-1">{currentTrack.item.name}</h5>
+                            <p className="text-muted mb-0">
+                                {currentTrack.item.artists.map(a => a.name).join(', ')}
+                            </p>
+                        </div>
+                    </div>
+
+                    <div className="mt-4 d-flex flex-wrap align-items-center justify-content-between">
+                        <div className="btn-group" role="group">
+                            {currentTrack.is_playing ? (
+                                <button className="btn btn-warning" onClick={pause}>⏸ Pauza</button>
+                            ) : (
+                                <button className="btn btn-success" onClick={play}>▶ Přehrát</button>
+                            )}
+                            <button className="btn btn-secondary" onClick={next}>⏭ Další</button>
+                        </div>
+
+                        <div className="d-flex align-items-center mt-3 mt-md-0">
+                            <label className="me-2 mb-0">🔊 {volume}%</label>
+                            <input
+                                type="range"
+                                min="0"
+                                max="100"
+                                value={volume}
+                                onChange={changeVolume}
+                                className="form-range"
+                                style={{width: '150px'}}
+                            />
+                        </div>
                     </div>
                 </div>
+
             ) : (
                 <p className="text-muted">Momentálně nic nehraje.</p>
             )}
