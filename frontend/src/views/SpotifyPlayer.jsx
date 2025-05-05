@@ -1,5 +1,6 @@
 import React, { useEffect, useState } from 'react';
 import axios from 'axios';
+import SpotifyEmbed from './SpotifyEmbed';
 
 const SpotifyPlayer = ({ showMessage }) => {
     const [devices, setDevices] = useState([]);
@@ -153,7 +154,10 @@ const SpotifyPlayer = ({ showMessage }) => {
 
             {/* Tlačítko přehrát */}
             {(trackUri || contextUri) && (
-                <button className="btn btn-success mb-4" onClick={play}>▶ Přehrát</button>
+                <>
+                    <button className="btn btn-success mb-3" onClick={play}>▶ Přehrát</button>
+                    <SpotifyEmbed uri={trackUri || contextUri} />
+                </>
             )}
 
             {/* Právě přehráváno */}

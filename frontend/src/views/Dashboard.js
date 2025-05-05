@@ -167,13 +167,18 @@ const Dashboard = ({handleLogout}) => {
                                     <h5 className="card-title">Služby</h5>
                                     <p className="card-text">Spotify, YouTube, ...</p>
                                 </div>
-                                <Link to="/api/spotify/login" className="btn btn-success">
-                                    Připojit Spotify
-                                </Link>
-                                <p>{spotifyLoggedIn ? "Spotify je připojeno ✅" : "Spotify není připojeno ❌"}</p>
-                                <Link to="/spotify-player" className="btn btn-outline-primary mt-2">
-                                    Otevřít Spotify přehrávač
-                                </Link>
+                                {spotifyLoggedIn ? (
+                                    <>
+                                        <p>Spotify je připojeno ✅</p>
+                                        <Link to="/spotify-player" className="btn btn-outline-primary mt-2">
+                                            Otevřít Spotify přehrávač
+                                        </Link>
+                                    </>
+                                ) : (
+                                    <Link to="/api/spotify/login" className="btn btn-success">
+                                        Připojit Spotify
+                                    </Link>
+                                )}
                             </div>
                         </div>
                     </div>
