@@ -106,10 +106,29 @@ const Dashboard = ({handleLogout}) => {
 
     return (
         <div className="container py-5 text-white">
-            <header className="d-flex flex-column flex-md-row justify-content-between align-items-center mb-5">
-                <h1 className="display-4 text-center text-md-start mb-3 mb-md-0">SmartHome Dashboard</h1>
-                <button onClick={handleLogoutClick} className="btn btn-danger">Odhlásit se</button>
+            <header className="d-flex justify-content-between align-items-center mb-4 flex-wrap">
+                <div className="d-flex align-items-center">
+                    <h1 className="h3 mb-0 me-3">Smart Home Control</h1>
+
+                    {/* Ikona odhlášení pro malé displeje */}
+                    <button
+                        onClick={handleLogoutClick}
+                        className="btn btn-sm btn-outline-light d-inline d-md-none"
+                        title="Odhlásit se"
+                    >
+                        🔓
+                    </button>
+                </div>
+
+                {/* Tlačítko pro větší obrazovky */}
+                <button
+                    onClick={handleLogoutClick}
+                    className="btn btn-info d-none d-md-inline"
+                >
+                    Odhlásit se
+                </button>
             </header>
+
 
             {/* Info panel / mezisekce */}
             <div className="mb-4">
@@ -138,18 +157,19 @@ const Dashboard = ({handleLogout}) => {
 
             <p className="text-muted mb-4 text-center text-md-start">Přehled vaší chytré domácnosti</p>
 
-            <div className="row row-cols-1 row-cols-sm-2 row-cols-md-3 row-cols-lg-4 g-3">
+            <div className="row row-cols-1 row-cols-sm-2 row-cols-md-3 row-cols-lg-4 g-4 align-items-stretch">
                 {/* Počasí */}
                 <div className="col">
                     <div className="card bg-dark text-white text-center shadow-sm rounded-4 h-100">
                         <div className="card-body d-flex flex-column justify-content-between">
                             <div>
-                                <FaTemperatureHigh className="text-info mb-3" size={40} />
+                                <FaTemperatureHigh className="text-info mb-3" size={40}/>
                                 <h5 className="card-title">Počasí</h5>
                                 {weather ? (
                                     <>
                                         <p className="card-text">{weather.city}: {weather.temp}°C</p>
-                                        <img src={`https:${weather.icon}`} alt={weather.description} style={{ width: "80px" }} className="my-2" />
+                                        <img src={`https:${weather.icon}`} alt={weather.description}
+                                             style={{width: "80px"}} className="my-2"/>
                                         <p className="card-text text-info">{weather.description}</p>
                                     </>
                                 ) : (
@@ -165,7 +185,7 @@ const Dashboard = ({handleLogout}) => {
                     <div className="card bg-dark text-white text-center shadow-sm rounded-4 h-100">
                         <div className="card-body d-flex flex-column justify-content-between">
                             <div>
-                                <FaWifi className="text-info mb-3" size={40} />
+                                <FaWifi className="text-info mb-3" size={40}/>
                                 <h5 className="card-title">Zařízení</h5>
                                 <p className="card-text">{devices.length} připojených</p>
                             </div>
@@ -182,7 +202,7 @@ const Dashboard = ({handleLogout}) => {
                     <div className="card bg-dark text-white text-center shadow-sm rounded-4 h-100">
                         <div className="card-body d-flex flex-column justify-content-between">
                             <div>
-                                <FaHome className="text-info mb-3" size={40} />
+                                <FaHome className="text-info mb-3" size={40}/>
                                 <h5 className="card-title">Místnosti</h5>
                                 <p className="card-text">Kontrola, správa, řízení</p>
                             </div>
@@ -196,7 +216,7 @@ const Dashboard = ({handleLogout}) => {
                     <div className="card bg-dark text-white text-center shadow-sm rounded-4 h-100">
                         <div className="card-body d-flex flex-column justify-content-between">
                             <div>
-                                <FaClock className="text-info mb-3" size={40} />
+                                <FaClock className="text-info mb-3" size={40}/>
                                 <h5 className="card-title">Automatizace</h5>
                                 <p className="card-text">Naplánuj časované akce</p>
                             </div>
@@ -210,7 +230,7 @@ const Dashboard = ({handleLogout}) => {
                     <div className="card bg-dark text-white text-center shadow-sm rounded-4 h-100">
                         <div className="card-body d-flex flex-column justify-content-between">
                             <div>
-                                <FaWifi className="text-info mb-3" size={40} />
+                                <FaWifi className="text-info mb-3" size={40}/>
                                 <h5 className="card-title">Služby</h5>
                                 <p className="card-text">Spotify, YouTube, ...</p>
                             </div>
@@ -233,7 +253,7 @@ const Dashboard = ({handleLogout}) => {
                     <div className="card bg-dark text-white text-center shadow-sm rounded-4 h-100">
                         <div className="card-body d-flex flex-column justify-content-between">
                             <div>
-                                <FaPlusSquare className="text-info mb-3" size={40} />
+                                <FaPlusSquare className="text-info mb-3" size={40}/>
                                 <h5 className="card-title">Nové zařízení</h5>
                                 <p className="card-text">Zaregistruj MQTT zařízení</p>
                             </div>
