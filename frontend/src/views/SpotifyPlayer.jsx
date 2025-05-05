@@ -1,5 +1,6 @@
 import React, { useEffect, useState } from 'react';
 import axios from 'axios';
+import {Link} from "react-router-dom";
 
 
 const SpotifyPlayer = ({ showMessage }) => {
@@ -90,7 +91,7 @@ const SpotifyPlayer = ({ showMessage }) => {
     return (
         <div className="container py-4">
             <h2 className="mb-3">Spotify přehrávač</h2>
-
+            <Link to="/" className="btn btn-secondary">Zpět na Dashboard</Link>
             {/* Výběr zařízení */}
             <div className="mb-3">
                 <label className="form-label">Zařízení</label>

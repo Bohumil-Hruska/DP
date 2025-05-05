@@ -75,47 +75,26 @@ const Dashboard = ({handleLogout}) => {
     }, []);
 
     return (
-        <div className="container py-5">
+        <div className="container py-5 text-white">
             <header className="d-flex flex-column flex-md-row justify-content-between align-items-center mb-5">
                 <h1 className="display-4 text-center text-md-start mb-3 mb-md-0">SmartHome Dashboard</h1>
-                <button onClick={handleLogoutClick} className="btn btn-outline-danger">Odhlásit se</button>
+                <button onClick={handleLogoutClick} className="btn btn-outline-light">Odhlásit se</button>
             </header>
 
             <p className="text-muted mb-4 text-center text-md-start">Přehled vaší chytré domácnosti</p>
 
-            <div className="row row-cols-1 row-cols-sm-2 row-cols-md-3 row-cols-lg-4 g-4">
-                {/* RoomManager */}
-                <div className="col">
-                    <div className="card text-center shadow h-100">
-                        <div className="card-body d-flex flex-column justify-content-between">
-                            <div>
-                                <FaHome className="text-warning mb-3" size={50}/>
-                                <h5 className="card-title">Místnosti</h5>
-                                <p className="card-text">Kontrola, správa, řízení</p>
-                            </div>
-                            <Link to="/rooms" className="btn btn-primary mt-3">
-                                Zobrazit seznam
-                            </Link>
-                        </div>
-                    </div>
-                </div>
-
+            <div className="row row-cols-1 row-cols-sm-2 row-cols-md-3 row-cols-lg-4 g-3">
                 {/* Počasí */}
                 <div className="col">
-                    <div className="card text-center shadow h-100">
+                    <div className="card bg-dark text-white text-center shadow-sm rounded-4 h-100">
                         <div className="card-body d-flex flex-column justify-content-between">
                             <div>
-                                <FaTemperatureHigh className="text-danger mb-3" size={50}/>
+                                <FaTemperatureHigh className="text-info mb-3" size={40} />
                                 <h5 className="card-title">Počasí</h5>
                                 {weather ? (
                                     <>
                                         <p className="card-text">{weather.city}: {weather.temp}°C</p>
-                                        <img
-                                            src={`https:${weather.icon}`}
-                                            alt={weather.description}
-                                            style={{width: "80px"}}
-                                            className="my-2"
-                                        />
+                                        <img src={`https:${weather.icon}`} alt={weather.description} style={{ width: "80px" }} className="my-2" />
                                         <p className="card-text text-muted">{weather.description}</p>
                                     </>
                                 ) : (
@@ -126,78 +105,89 @@ const Dashboard = ({handleLogout}) => {
                     </div>
                 </div>
 
-                {/* Automatizace */}
-                <div className="col">
-                    <div className="card text-center shadow h-100">
-                        <div className="card-body d-flex flex-column justify-content-between">
-                            <div>
-                                <FaClock className="text-success mb-3" size={50}/>
-                                <h5 className="card-title">Automatizace</h5>
-                                <p className="card-text">Naplánuj časované akce</p>
-                            </div>
-                            <Link to="/automation" className="btn btn-primary mt-3">Plánovat</Link>
-                        </div>
-                    </div>
-                </div>
-
                 {/* Zařízení */}
                 <div className="col">
-                    <div className="card text-center shadow h-100">
+                    <div className="card bg-dark text-white text-center shadow-sm rounded-4 h-100">
                         <div className="card-body d-flex flex-column justify-content-between">
                             <div>
-                                <FaWifi className="text-primary mb-3" size={50}/>
+                                <FaWifi className="text-info mb-3" size={40} />
                                 <h5 className="card-title">Zařízení</h5>
                                 <p className="card-text">{devices.length} připojených</p>
                             </div>
-                            <Link to="/devices" className="btn btn-primary mt-3">
-                                Zobrazit seznam
-                            </Link>
-                            <Link to="/bluetooth" className="btn btn-info mt-3">
-                                Bluetooth zařízení
-                            </Link>
+                            <div>
+                                <Link to="/devices" className="btn btn-info mb-2">Zobrazit seznam</Link>
+                                <Link to="/bluetooth" className="btn btn-outline-info">Bluetooth</Link>
+                            </div>
                         </div>
                     </div>
                 </div>
 
-                    <div className="col">
-                        <div className="card text-center shadow h-100">
-                            <div className="card-body d-flex flex-column justify-content-between">
-                                <div>
-                                    <FaWifi className="text-primary mb-3" size={50}/>
-                                    <h5 className="card-title">Služby</h5>
-                                    <p className="card-text">Spotify, YouTube, ...</p>
-                                </div>
-                                {spotifyLoggedIn ? (
-                                    <>
-                                        <p>Spotify je připojeno ✅</p>
-                                        <Link to="/spotify-player" className="btn btn-outline-primary mt-2">
-                                            Otevřít Spotify přehrávač
-                                        </Link>
-                                    </>
-                                ) : (
-                                    <a href="/api/spotify/login" className="btn btn-success">
-                                        Připojit Spotify
-                                    </a>
-                                )}
-                            </div>
-                        </div>
-                    </div>
-
+                {/* Místnosti */}
                 <div className="col">
-                    <div className="card text-center shadow h-100">
+                    <div className="card bg-dark text-white text-center shadow-sm rounded-4 h-100">
                         <div className="card-body d-flex flex-column justify-content-between">
                             <div>
-                                <FaPlusSquare className="text-primary mb-3" size={50}/>
+                                <FaHome className="text-info mb-3" size={40} />
+                                <h5 className="card-title">Místnosti</h5>
+                                <p className="card-text">Kontrola, správa, řízení</p>
+                            </div>
+                            <Link to="/rooms" className="btn btn-info">Zobrazit</Link>
+                        </div>
+                    </div>
+                </div>
+
+                {/* Automatizace */}
+                <div className="col">
+                    <div className="card bg-dark text-white text-center shadow-sm rounded-4 h-100">
+                        <div className="card-body d-flex flex-column justify-content-between">
+                            <div>
+                                <FaClock className="text-info mb-3" size={40} />
+                                <h5 className="card-title">Automatizace</h5>
+                                <p className="card-text">Naplánuj časované akce</p>
+                            </div>
+                            <Link to="/automation" className="btn btn-info">Plánovat</Link>
+                        </div>
+                    </div>
+                </div>
+
+                {/* Služby - Spotify */}
+                <div className="col">
+                    <div className="card bg-dark text-white text-center shadow-sm rounded-4 h-100">
+                        <div className="card-body d-flex flex-column justify-content-between">
+                            <div>
+                                <FaWifi className="text-info mb-3" size={40} />
+                                <h5 className="card-title">Služby</h5>
+                                <p className="card-text">Spotify, YouTube, ...</p>
+                            </div>
+                            {spotifyLoggedIn ? (
+                                <>
+                                    <p>Spotify je připojeno ✅</p>
+                                    <Link to="/spotify-player" className="btn btn-outline-info mt-2">Přehrávač</Link>
+                                </>
+                            ) : (
+                                <a href="/api/spotify/login" className="btn btn-info">Připojit Spotify</a>
+                            )}
+                        </div>
+                    </div>
+                </div>
+
+                {/* Nové zařízení */}
+                <div className="col">
+                    <div className="card bg-dark text-white text-center shadow-sm rounded-4 h-100">
+                        <div className="card-body d-flex flex-column justify-content-between">
+                            <div>
+                                <FaPlusSquare className="text-info mb-3" size={40} />
                                 <h5 className="card-title">Nové zařízení</h5>
                                 <p className="card-text">Zaregistruj MQTT zařízení</p>
                             </div>
-                            <Link to="/add-device" className="btn btn-success mt-3">Zaregistrovat</Link>
+                            <Link to="/add-device" className="btn btn-outline-info">Zaregistrovat</Link>
                         </div>
                     </div>
                 </div>
             </div>
         </div>
     );
+
 };
 
 export default Dashboard;
