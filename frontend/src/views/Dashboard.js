@@ -167,9 +167,12 @@ const Dashboard = ({handleLogout}) => {
                                     <h5 className="card-title">Služby</h5>
                                     <p className="card-text">Spotify, YouTube, ...</p>
                                 </div>
-                                <Link to="/api/spotify/login" className="btn btn-success">
+                                <button
+                                    className="btn btn-success"
+                                    onClick={() => window.location.href = '/api/spotify/login'}
+                                >
                                     Připojit Spotify
-                                </Link>
+                                </button>
                                 <p>{spotifyLoggedIn ? "Spotify je připojeno ✅" : "Spotify není připojeno ❌"}</p>
                             </div>
                         </div>
