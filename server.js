@@ -127,6 +127,7 @@ client.on('message', function (topic, message) {
 
 app.get('/api/spotify/login', (req, res) => {
     const scope = 'user-read-playback-state user-modify-playback-state';
+    console.log("Připojení ke Spotify: login route aktivována");
     const params = querystring.stringify({
         response_type: 'code',
         client_id: process.env.SPOTIFY_CLIENT_ID,
@@ -139,33 +140,46 @@ app.get('/api/spotify/login', (req, res) => {
 
 app.get('/callback', async (req, res) => {
     const code = req.query.code;
-    const response = await fetch('https://accounts.spotify.com/api/token', {
-        method: 'POST',
-        headers: {
-            'Authorization': 'Basic ' + Buffer.from(
-                process.env.SPOTIFY_CLIENT_ID + ':' + process.env.SPOTIFY_CLIENT_SECRET
-            ).toString('base64'),
-            'Content-Type': 'application/x-www-form-urlencoded'
-        },
-        body: querystring.stringify({
-            grant_type: 'authorization_code',
-            code,
-            redirect_uri: process.env.SPOTIFY_REDIRECT_URI
-        })
-    });
+    console.log("Spotify callback aktivován:", code);
 
-    const data = await response.json();
-    if (data.access_token) {
-        res.cookie('spotify_access_token', data.access_token, {
-            httpOnly: true,
-            secure: true,
-            sameSite: 'Strict',
-            maxAge: 3600 * 1000
+    try {
+        const response = await fetch('https://accounts.spotify.com/api/token', {
+            method: 'POST',
+            headers: {
+                'Authorization': 'Basic ' + Buffer.from(
+                    process.env.SPOTIFY_CLIENT_ID + ':' + process.env.SPOTIFY_CLIENT_SECRET
+                ).toString('base64'),
+                'Content-Type': 'application/x-www-form-urlencoded'
+            },
+            body: querystring.stringify({
+                grant_type: 'authorization_code',
+                code,
+                redirect_uri: process.env.SPOTIFY_REDIRECT_URI
+            })
         });
-    } else {
-        res.status(400).send('Chyba při přihlášení ke Spotify');
+
+        const data = await response.json();
+        console.log("Spotify response:", data);
+
+        if (data.access_token) {
+            res.cookie('spotify_access_token', data.access_token, {
+                httpOnly: true,
+                secure: true,
+                sameSite: 'Strict',
+                maxAge: 3600 * 1000
+            });
+            res.redirect('/'); // nebo '/dashboard'
+        } else {
+            console.error("Token získání selhalo:", data);
+            res.status(400).send('Chyba při přihlášení ke Spotify');
+        }
+
+    } catch (err) {
+        console.error("Chyba ve /callback:", err);
+        res.status(500).send('Chyba serveru při přihlašování ke Spotify');
     }
 });
+
 
 app.get('/api/spotify/status', (req, res) => {
     const token = req.cookies?.spotify_access_token;
