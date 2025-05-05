@@ -13,6 +13,16 @@ const SpotifyPlayer = ({ showMessage }) => {
     const [volume, setVolume] = useState(50);
 
     useEffect(() => {
+        const delayDebounce = setTimeout(() => {
+            if (searchQuery.trim()) {
+                searchTracks();
+            }
+        }, 500); // čeká 500 ms po posledním psaní
+
+        return () => clearTimeout(delayDebounce);
+    }, [searchQuery]);
+
+    useEffect(() => {
         fetchDevices();
         fetchCurrentTrack();
         const interval = setInterval(fetchCurrentTrack, 5000);
@@ -103,7 +113,6 @@ const SpotifyPlayer = ({ showMessage }) => {
                         value={searchQuery}
                         onChange={(e) => setSearchQuery(e.target.value)}
                     />
-                    <button className="btn btn-outline-secondary" onClick={searchTracks}>🔍 Hledat</button>
                 </div>
             </div>
 
@@ -128,16 +137,31 @@ const SpotifyPlayer = ({ showMessage }) => {
                         <button
                             key={item.id}
                             className="list-group-item list-group-item-action d-flex align-items-center"
-                            onClick={() => {
-                                if (isTrack) {
-                                    setTrackUri(item.uri);
-                                    setContextUri('');
-                                } else {
-                                    setContextUri(item.uri);
-                                    setTrackUri('');
+                            onClick={async () => {
+                                try {
+                                    if (isTrack) {
+                                        setTrackUri(item.uri);
+                                        setContextUri('');
+                                        await axios.post('/api/spotify/play', {
+                                            deviceId: selectedDevice,
+                                            trackUri: item.uri
+                                        }, { withCredentials: true });
+                                    } else {
+                                        setContextUri(item.uri);
+                                        setTrackUri('');
+                                        await axios.post('/api/spotify/play', {
+                                            deviceId: selectedDevice,
+                                            contextUri: item.uri
+                                        }, { withCredentials: true });
+                                    }
+
+                                    showMessage(`Spuštěno: ${displayName}`, false);
+                                    fetchCurrentTrack();
+                                } catch {
+                                    showMessage('Nepodařilo se přehrát položku.', true);
                                 }
-                                showMessage(`Vybráno: ${displayName}`, false);
                             }}
+
                         >
                             {image && (
                                 <img src={image} alt="" width="40" className="me-3" />
@@ -150,13 +174,7 @@ const SpotifyPlayer = ({ showMessage }) => {
                     );
                 })}
 
-
-            {/* Tlačítko přehrát */}
-            {(trackUri || contextUri) && (
-
-                    <button className="btn btn-success mb-3" onClick={play}>▶ Přehrát</button>
-
-            )}
+            
 
             {/* Právě přehráváno */}
             {currentTrack && currentTrack.item ? (
