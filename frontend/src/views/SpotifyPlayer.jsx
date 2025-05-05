@@ -1,6 +1,6 @@
 import React, { useEffect, useState } from 'react';
 import axios from 'axios';
-import SpotifyEmbed from './SpotifyEmbed';
+
 
 const SpotifyPlayer = ({ showMessage }) => {
     const [devices, setDevices] = useState([]);
