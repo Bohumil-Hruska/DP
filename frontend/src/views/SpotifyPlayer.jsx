@@ -1,18 +1,15 @@
 import React, { useEffect, useState } from 'react';
 import axios from 'axios';
 
-const SpotifyPlayerFull = ( {showMessage}) => {
+const SpotifyPlayer = ({ showMessage }) => {
     const [devices, setDevices] = useState([]);
     const [selectedDevice, setSelectedDevice] = useState('');
     const [searchQuery, setSearchQuery] = useState('');
     const [searchResults, setSearchResults] = useState([]);
     const [trackUri, setTrackUri] = useState('');
+    const [contextUri, setContextUri] = useState('');
     const [currentTrack, setCurrentTrack] = useState(null);
     const [volume, setVolume] = useState(50);
-    const [error, setError] = useState('');
-    const [success, setSuccess] = useState('');
-    const [contextUri, setContextUri] = useState('');
-
 
     useEffect(() => {
         fetchDevices();
@@ -26,7 +23,7 @@ const SpotifyPlayerFull = ( {showMessage}) => {
             const res = await axios.get('/api/spotify/devices', { withCredentials: true });
             setDevices(res.data.devices || []);
         } catch {
-            setError('Nepodařilo se načíst zařízení.');
+            showMessage('Nepodařilo se načíst zařízení.', true);
         }
     };
 
@@ -45,7 +42,7 @@ const SpotifyPlayerFull = ( {showMessage}) => {
             const res = await axios.get(`/api/spotify/search?q=${encodeURIComponent(searchQuery)}`, { withCredentials: true });
             setSearchResults(res.data);
         } catch {
-            setError('Nepodařilo se vyhledat skladby.');
+            showMessage('Nepodařilo se vyhledat skladby.', true);
         }
     };
 
@@ -83,9 +80,6 @@ const SpotifyPlayerFull = ( {showMessage}) => {
         <div className="container py-4">
             <h2 className="mb-3">Spotify přehrávač</h2>
 
-            {error && <div className="alert alert-danger">{error}</div>}
-            {success && <div className="alert alert-success">{success}</div>}
-
             {/* Výběr zařízení */}
             <div className="mb-3">
                 <label className="form-label">Zařízení</label>
@@ -97,14 +91,14 @@ const SpotifyPlayerFull = ( {showMessage}) => {
                 </select>
             </div>
 
-            {/* Vyhledávání skladeb */}
+            {/* Vyhledávání */}
             <div className="mb-3">
-                <label className="form-label">Vyhledat skladbu</label>
+                <label className="form-label">Vyhledat skladbu / album / playlist</label>
                 <div className="input-group">
                     <input
                         type="text"
                         className="form-control"
-                        placeholder="Např. Imagine Dragons - Believer"
+                        placeholder="Např. Queen, Bohemian Rhapsody"
                         value={searchQuery}
                         onChange={(e) => setSearchQuery(e.target.value)}
                     />
@@ -112,41 +106,57 @@ const SpotifyPlayerFull = ( {showMessage}) => {
                 </div>
             </div>
 
-            {searchResults.map(item => {
-                const isTrack = item.type === 'track';
-                const displayName = isTrack ? item.name : item.name + ' (celé album/playlist)';
-                const image = item.album?.images?.[2]?.url || item.images?.[2]?.url;
+            {/* Výsledky hledání */}
+            {searchResults.length > 0 && (
+                <div className="list-group mb-4">
+                    {searchResults.map(item => {
+                        const isTrack = item.type === 'track';
+                        const image = isTrack
+                            ? item.album?.images?.[2]?.url
+                            : item.images?.[2]?.url;
 
-                return (
-                    <button
-                        key={item.id}
-                        className="list-group-item list-group-item-action d-flex align-items-center"
-                        onClick={() => {
-                            if (isTrack) {
-                                setTrackUri(item.uri);
-                                setContextUri('');
-                            } else {
-                                setContextUri(item.uri);
-                                setTrackUri('');
-                            }
-                            showMessage(`Vybráno: ${displayName}`, false);
-                        }}
-                    >
-                        <img src={image} alt="" width="40" className="me-3" />
-                        <div>
-                            <strong>{displayName}</strong><br />
-                            <small>{item.artists?.map(a => a.name).join(', ')}</small>
-                        </div>
-                    </button>
-                );
-            })}
+                        const displayName = isTrack
+                            ? item.name
+                            : `${item.name} (${item.type})`;
 
-            {/* Přehrát tlačítko */}
-            {trackUri && (
-                <button className="btn btn-success mb-4" onClick={play}>▶ Přehrát vybranou skladbu</button>
+                        const secondaryText = isTrack
+                            ? item.artists?.map(a => a.name).join(', ')
+                            : item.owner?.display_name || '';
+
+                        return (
+                            <button
+                                key={item.id}
+                                className="list-group-item list-group-item-action d-flex align-items-center"
+                                onClick={() => {
+                                    if (isTrack) {
+                                        setTrackUri(item.uri);
+                                        setContextUri('');
+                                    } else {
+                                        setContextUri(item.uri);
+                                        setTrackUri('');
+                                    }
+                                    showMessage(`Vybráno: ${displayName}`, false);
+                                }}
+                            >
+                                {image && (
+                                    <img src={image} alt="" width="40" className="me-3" />
+                                )}
+                                <div>
+                                    <strong>{displayName}</strong><br />
+                                    <small>{secondaryText}</small>
+                                </div>
+                            </button>
+                        );
+                    })}
+                </div>
             )}
 
-            {/* Aktuální přehrávání */}
+            {/* Tlačítko přehrát */}
+            {(trackUri || contextUri) && (
+                <button className="btn btn-success mb-4" onClick={play}>▶ Přehrát</button>
+            )}
+
+            {/* Právě přehráváno */}
             {currentTrack && currentTrack.item ? (
                 <div className="card p-4">
                     <h4>Právě hraje:</h4>
@@ -175,4 +185,4 @@ const SpotifyPlayerFull = ( {showMessage}) => {
     );
 };
 
-export default SpotifyPlayerFull;
+export default SpotifyPlayer;
