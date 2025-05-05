@@ -157,6 +157,10 @@ const SpotifyPlayer = ({ showMessage }) => {
 
                                     showMessage(`Spuštěno: ${displayName}`, false);
                                     fetchCurrentTrack();
+
+                                    // 🧼 Vymazání hledání a výsledků:
+                                    setSearchQuery('');
+                                    setSearchResults([]);
                                 } catch {
                                     showMessage('Nepodařilo se přehrát položku.', true);
                                 }
