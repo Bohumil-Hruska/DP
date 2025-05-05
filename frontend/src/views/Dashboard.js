@@ -111,11 +111,30 @@ const Dashboard = ({handleLogout}) => {
                 <button onClick={handleLogoutClick} className="btn btn-danger">Odhlásit se</button>
             </header>
 
-            {currentTrack?.item && (
-                <p className="text-muted small">
-                    🎵 {currentTrack.item.name} – {currentTrack.item.artists.map(a => a.name).join(', ')}
-                </p>
-            )}
+            {/* Info panel / mezisekce */}
+            <div className="mb-4">
+                <div className="alert alert-info text-center rounded-3 shadow-sm mb-3">
+                    👋 Vítejte zpět! Systém běží stabilně.
+                    <span className="ms-3">
+      Zařízení: {devices.length} • Spotify: {currentTrack?.item && (
+                        <p className="text-muted small">
+                            🎵 {currentTrack.item.name} – {currentTrack.item.artists.map(a => a.name).join(', ')}
+                        </p>
+                    )}
+    </span>
+                </div>
+
+                <div className="text-center text-muted fs-5">
+                    📅 {new Date().toLocaleDateString('cs-CZ', {
+                    weekday: 'long',
+                    year: 'numeric',
+                    month: 'long',
+                    day: 'numeric'
+                })}{' '}
+                    – 🕒 {new Date().toLocaleTimeString('cs-CZ')}
+                </div>
+            </div>
+
 
             <p className="text-muted mb-4 text-center text-md-start">Přehled vaší chytré domácnosti</p>
 
