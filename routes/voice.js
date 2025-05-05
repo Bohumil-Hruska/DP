@@ -18,6 +18,7 @@ router.post('/api/voice/execute', async (req, res) => {
         return res.status(400).json({ message: 'Chybí hlasový příkaz.' });
     }
 
+
     const token = req.cookies.spotify_access_token;
     if (!token) return res.status(401).json({ message: 'Spotify není přihlášeno.' });
 
@@ -28,29 +29,44 @@ router.post('/api/voice/execute', async (req, res) => {
 
     switch (intent.type) {
         case 'play_track':
-            return await handlePlayTrack(intent.query, token, res);
+            await handlePlayTrack(intent.query, token, res);
+            break;
 
         case 'play_top_by_artist':
-            return await handlePlayTopTrack(intent.artist, token, res);
+            await handlePlayTopTrack(intent.artist, token, res);
+            break;
 
         case 'play_playlist':
-            return await handlePlayPlaylist(intent.name, token, res);
+            await handlePlayPlaylist(intent.name, token, res);
+            break;
 
         case 'volume':
-            return await handleVolumeChange(intent.value, token, res);
+            await handleVolumeChange(intent.value, token, res);
+            break;
 
         case 'pause':
-            return await handlePause(token, res);
+            await handlePause(token, res);
+            break;
 
         case 'resume':
-            return await handleResume(token, res);
+            await handleResume(token, res);
+            break;
 
         case 'next':
-            return await handleNext(token, res);
+            await handleNext(token, res);
+            break;
 
         default:
             return res.json({ message: 'Příkaz nerozpoznán nebo není podporován.' });
     }
+
+// 🔊 Odešli hlasovou odpověď (pokud byl příkaz úspěšný)
+    if (intent.tts) {
+        return res.json({ message: intent.tts });
+    } else {
+        return res.json({ message: 'Příkaz proveden.' });
+    }
+
 });
 
 module.exports = router;
