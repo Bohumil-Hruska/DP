@@ -229,6 +229,30 @@ app.post('/api/spotify/next', async (req, res) => {
     res.sendStatus(response.ok ? 204 : 500);
 });
 
+app.get('/api/spotify/volume', async (req, res) => {
+    const token = req.cookies.spotify_access_token;
+    if (!token) return res.status(401).json({ error: 'Spotify není přihlášeno.' });
+
+    try {
+        const response = await fetch('https://api.spotify.com/v1/me/player', {
+            headers: {
+                Authorization: `Bearer ${token}`
+            }
+        });
+
+        const data = await response.json();
+
+        if (!data || !data.device) {
+            return res.status(404).json({ error: 'Zařízení nebylo nalezeno.' });
+        }
+
+        return res.json({ volume: data.device.volume_percent });
+    } catch (err) {
+        console.error('Chyba při načítání hlasitosti:', err);
+        return res.status(500).json({ error: 'Chyba při získávání hlasitosti.' });
+    }
+});
+
 app.post('/api/spotify/volume', async (req, res) => {
     const token = req.cookies.spotify_access_token;
     const { volume } = req.body;
