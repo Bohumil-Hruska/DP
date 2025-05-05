@@ -29,7 +29,7 @@ async function handlePlayTrack(query, token, res) {
         });
         const recData = await recRes.json();
 
-        const uris = recData.tracks?.map(t => t.uri);
+        const uris = [track.uri, ...recData.tracks.map(t => t.uri)];
         if (!uris || uris.length === 0) return res.status(404).json({ message: 'Nebyly nalezeny žádné podobné skladby.' });
 
         const deviceId = await getActiveDeviceId(token);
@@ -52,6 +52,7 @@ async function handlePlayTrack(query, token, res) {
         return res.status(500).json({ message: 'Chyba při přehrávání rádia.' });
     }
 }
+
 
 // ▶ Přehraj top skladbu interpreta
 async function handlePlayTopTrack(artistName, token, res) {
