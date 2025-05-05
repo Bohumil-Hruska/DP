@@ -114,6 +114,7 @@ client.on('message', function (topic, message) {
     }
 });
 
+app.get('/callback', spotifyController.callback);
 app.use('/api', spotifyRoutes);
 
 
