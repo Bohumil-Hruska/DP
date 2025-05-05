@@ -14,6 +14,7 @@ async function getActiveDeviceId(token) {
 // ▶ Přehraj konkrétní skladbu
 async function handlePlayTrack(query, token, res) {
     try {
+        // 🔍 Najdi skladbu podle názvu
         const search = await fetch(`https://api.spotify.com/v1/search?q=${encodeURIComponent(query)}&type=track&limit=1`, {
             headers: { Authorization: `Bearer ${token}` }
         });
@@ -22,23 +23,33 @@ async function handlePlayTrack(query, token, res) {
 
         if (!track) return res.json({ message: `Skladba "${query}" nebyla nalezena.` });
 
+        // 🔁 Získej doporučení (radio based on track)
+        const recRes = await fetch(`https://api.spotify.com/v1/recommendations?seed_tracks=${track.id}&limit=20`, {
+            headers: { Authorization: `Bearer ${token}` }
+        });
+        const recData = await recRes.json();
+
+        const uris = recData.tracks?.map(t => t.uri);
+        if (!uris || uris.length === 0) return res.status(404).json({ message: 'Nebyly nalezeny žádné podobné skladby.' });
+
         const deviceId = await getActiveDeviceId(token);
         if (!deviceId) return res.status(400).json({ message: 'Chybí aktivní zařízení.' });
 
+        // ▶ Spusť přehrávání jako playlist
         await fetch(`https://api.spotify.com/v1/me/player/play?device_id=${deviceId}`, {
             method: 'PUT',
             headers: {
                 Authorization: `Bearer ${token}`,
                 'Content-Type': 'application/json',
             },
-            body: JSON.stringify({ uris: [track.uri] })
+            body: JSON.stringify({ uris })
         });
 
-        return res.json({ message: `▶ Přehrávám: ${track.name} od ${track.artists.map(a => a.name).join(', ')}` });
+        return res.json({ message: `▶ Spuštěno rádio na základě skladby: ${track.name} od ${track.artists.map(a => a.name).join(', ')}` });
 
     } catch (err) {
         console.error(err);
-        return res.status(500).json({ message: 'Chyba při přehrávání skladby.' });
+        return res.status(500).json({ message: 'Chyba při přehrávání rádia.' });
     }
 }
 
