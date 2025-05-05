@@ -25,7 +25,7 @@ function App() {
   const showMessage = (msg, error) => {
     setMessage(msg);
     setIsError(error);
-    setTimeout(() => setMessage(''), 3000);
+    setTimeout(() => setMessage(''), 2000);
   };
 
   const handleLogin = async () => {
@@ -98,7 +98,7 @@ function App() {
                         <Route path="/automation" element={<AutomationManager />} />
                         <Route path="/add-device" element={<UnregisteredDevices />} />
                         <Route path="/bluetooth" element={<BluetoothDevices />} />
-                        <Route path="/spotify-player" element={<SpotifyPlayer />} />
+                        <Route path="/spotify-player" element={<SpotifyPlayer showMessage={showMessage} />} />
                         <Route path="*" element={<Navigate to="/" />} />
                       </>
                   )}

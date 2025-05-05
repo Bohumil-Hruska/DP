@@ -1,7 +1,7 @@
 import React, { useEffect, useState } from 'react';
 import axios from 'axios';
 
-const SpotifyPlayerFull = () => {
+const SpotifyPlayerFull = ( {showMessage}) => {
     const [devices, setDevices] = useState([]);
     const [selectedDevice, setSelectedDevice] = useState('');
     const [searchQuery, setSearchQuery] = useState('');
@@ -53,10 +53,10 @@ const SpotifyPlayerFull = () => {
                 deviceId: selectedDevice,
                 trackUri,
             }, { withCredentials: true });
-            setSuccess('Skladba byla spuštěna!');
+            showMessage('Skladba byla spuštěna!', false);
             fetchCurrentTrack();
         } catch {
-            setError('Nepodařilo se spustit skladbu.');
+            showMessage('Nepodařilo se spustit skladbu.', true);
         }
     };
 
