@@ -1,6 +1,7 @@
 import React, { useEffect, useState } from 'react';
 import axios from 'axios';
 import {Link} from "react-router-dom";
+import { FaPlay, FaPause, FaForward, FaVolumeUp } from 'react-icons/fa';
 
 
 const SpotifyPlayer = ({ showMessage }) => {
@@ -176,7 +177,6 @@ const SpotifyPlayer = ({ showMessage }) => {
 
                                     fetchCurrentTrack();
 
-                                    // 🧼 Vymazání hledání a výsledků:
                                     setSearchQuery('');
                                     setSearchResults([]);
                                 } catch {
@@ -218,18 +218,25 @@ const SpotifyPlayer = ({ showMessage }) => {
                         </div>
                     </div>
 
-                    <div className="mt-4 d-flex flex-wrap align-items-center justify-content-between">
+                    <div
+                        className="mt-4 d-flex flex-wrap align-items-center justify-content-between bg-dark text-white p-3 rounded">
                         <div className="btn-group" role="group">
                             {currentTrack.is_playing ? (
-                                <button className="btn btn-warning" onClick={pause}>⏸ Pauza</button>
+                                <button className="btn btn-outline-light" onClick={pause}>
+                                    <FaPause/> Pauza
+                                </button>
                             ) : (
-                                <button className="btn btn-success" onClick={play}>▶ Přehrát</button>
+                                <button className="btn btn-success" onClick={play}>
+                                    <FaPlay/> Přehrát
+                                </button>
                             )}
-                            <button className="btn btn-secondary" onClick={next}>⏭ Další</button>
+                            <button className="btn btn-outline-light" onClick={next}>
+                                <FaForward/> Další
+                            </button>
                         </div>
 
                         <div className="d-flex align-items-center mt-3 mt-md-0">
-                            <label className="me-2 mb-0">🔊 {volume}%</label>
+                            <FaVolumeUp className="me-2"/>
                             <input
                                 type="range"
                                 min="0"
@@ -239,6 +246,7 @@ const SpotifyPlayer = ({ showMessage }) => {
                                 className="form-range"
                                 style={{width: '150px'}}
                             />
+                            <span className="ms-2">{volume}%</span>
                         </div>
                     </div>
                 </div>
