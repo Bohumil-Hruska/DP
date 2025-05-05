@@ -14,6 +14,7 @@ const spotifyController = require('./controllers/spotifyController');
 const spotifyRoutes = require('./routes/spotify');
 const jwt = require('jsonwebtoken');
 const SECRET = process.env.JWT_SECRET;
+const authenticate = require('./middleware/authenticate');
 
 
 const USERS_FILE = path.join(__dirname, 'users.json');
