@@ -278,6 +278,21 @@ app.post('/api/spotify/play', async (req, res) => {
     }
 });
 
+app.get('/api/spotify/search', async (req, res) => {
+    const token = req.cookies.spotify_access_token;
+    const query = req.query.q;
+    if (!token || !query) return res.status(400).json({ error: 'Chybí token nebo dotaz' });
+
+    const response = await fetch(`https://api.spotify.com/v1/search?q=${encodeURIComponent(query)}&type=track&limit=5`, {
+        headers: {
+            'Authorization': `Bearer ${token}`
+        }
+    });
+
+    const data = await response.json();
+    res.json(data.tracks.items || []);
+});
+
 
 
 

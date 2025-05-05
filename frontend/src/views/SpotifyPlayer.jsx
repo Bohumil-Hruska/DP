@@ -1,9 +1,11 @@
 import React, { useEffect, useState } from 'react';
 import axios from 'axios';
 
-const SpotifyPlayer = () => {
+const SpotifyPlayerFull = () => {
     const [devices, setDevices] = useState([]);
     const [selectedDevice, setSelectedDevice] = useState('');
+    const [searchQuery, setSearchQuery] = useState('');
+    const [searchResults, setSearchResults] = useState([]);
     const [trackUri, setTrackUri] = useState('');
     const [currentTrack, setCurrentTrack] = useState(null);
     const [volume, setVolume] = useState(50);
@@ -32,6 +34,16 @@ const SpotifyPlayer = () => {
             setCurrentTrack(res.data);
         } catch {
             setCurrentTrack(null);
+        }
+    };
+
+    const searchTracks = async () => {
+        if (!searchQuery.trim()) return;
+        try {
+            const res = await axios.get(`/api/spotify/search?q=${encodeURIComponent(searchQuery)}`, { withCredentials: true });
+            setSearchResults(res.data);
+        } catch {
+            setError('Nepodařilo se vyhledat skladby.');
         }
     };
 
@@ -71,7 +83,7 @@ const SpotifyPlayer = () => {
             {error && <div className="alert alert-danger">{error}</div>}
             {success && <div className="alert alert-success">{success}</div>}
 
-            {/* Výběr zařízení a skladby */}
+            {/* Výběr zařízení */}
             <div className="mb-3">
                 <label className="form-label">Zařízení</label>
                 <select className="form-select" onChange={(e) => setSelectedDevice(e.target.value)}>
@@ -82,20 +94,48 @@ const SpotifyPlayer = () => {
                 </select>
             </div>
 
+            {/* Vyhledávání skladeb */}
             <div className="mb-3">
-                <label className="form-label">Spotify URI skladby</label>
-                <input
-                    type="text"
-                    className="form-control"
-                    placeholder="např. spotify:track:7ouMYWpwJ422jRcDASZB7P"
-                    value={trackUri}
-                    onChange={(e) => setTrackUri(e.target.value)}
-                />
+                <label className="form-label">Vyhledat skladbu</label>
+                <div className="input-group">
+                    <input
+                        type="text"
+                        className="form-control"
+                        placeholder="Např. Imagine Dragons - Believer"
+                        value={searchQuery}
+                        onChange={(e) => setSearchQuery(e.target.value)}
+                    />
+                    <button className="btn btn-outline-secondary" onClick={searchTracks}>🔍 Hledat</button>
+                </div>
             </div>
 
-            <button className="btn btn-success mb-4" onClick={play}>▶ Přehrát</button>
+            {searchResults.length > 0 && (
+                <div className="list-group mb-4">
+                    {searchResults.map(track => (
+                        <button
+                            key={track.id}
+                            className="list-group-item list-group-item-action d-flex align-items-center"
+                            onClick={() => {
+                                setTrackUri(track.uri);
+                                setSuccess(`Vybrána skladba: ${track.name}`);
+                            }}
+                        >
+                            <img src={track.album.images[2]?.url} alt="" width="40" className="me-3" />
+                            <div>
+                                <strong>{track.name}</strong><br />
+                                <small>{track.artists.map(a => a.name).join(', ')}</small>
+                            </div>
+                        </button>
+                    ))}
+                </div>
+            )}
 
-            {/* Aktuálně přehrávaná skladba */}
+            {/* Přehrát tlačítko */}
+            {trackUri && (
+                <button className="btn btn-success mb-4" onClick={play}>▶ Přehrát vybranou skladbu</button>
+            )}
+
+            {/* Aktuální přehrávání */}
             {currentTrack && currentTrack.item ? (
                 <div className="card p-4">
                     <h4>Právě hraje:</h4>
@@ -124,4 +164,4 @@ const SpotifyPlayer = () => {
     );
 };
 
-export default SpotifyPlayer;
+export default SpotifyPlayerFull;
