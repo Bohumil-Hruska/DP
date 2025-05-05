@@ -254,44 +254,58 @@ app.get('/api/spotify/devices', async (req, res) => {
 
 app.post('/api/spotify/play', async (req, res) => {
     const token = req.cookies.spotify_access_token;
-    if (!token) return res.status(401).json({ error: 'Not authenticated' });
+    const { deviceId, trackUri, contextUri } = req.body;
 
-    const { deviceId, trackUri } = req.body;
+    if (!token || !deviceId || (!trackUri && !contextUri)) {
+        return res.status(400).json({ error: 'Chybí potřebné parametry' });
+    }
 
-    const playResponse = await fetch(`https://api.spotify.com/v1/me/player/play?device_id=${deviceId}`, {
+    const payload = contextUri
+        ? { context_uri: contextUri }
+        : { uris: [trackUri] };
+
+    const response = await fetch(`https://api.spotify.com/v1/me/player/play?device_id=${deviceId}`, {
         method: 'PUT',
         headers: {
             'Authorization': `Bearer ${token}`,
             'Content-Type': 'application/json',
         },
-        body: JSON.stringify({
-            uris: [trackUri],
-        }),
+        body: JSON.stringify(payload),
     });
 
-    if (playResponse.ok) {
+    if (response.ok) {
         res.json({ success: true });
     } else {
-        const err = await playResponse.json();
+        const err = await response.json();
         console.error('Spotify play error:', err);
         res.status(500).json({ error: err });
     }
 });
 
+
 app.get('/api/spotify/search', async (req, res) => {
     const token = req.cookies.spotify_access_token;
     const query = req.query.q;
+
     if (!token || !query) return res.status(400).json({ error: 'Chybí token nebo dotaz' });
 
-    const response = await fetch(`https://api.spotify.com/v1/search?q=${encodeURIComponent(query)}&type=track&limit=5`, {
-        headers: {
-            'Authorization': `Bearer ${token}`
+    const response = await fetch(
+        `https://api.spotify.com/v1/search?q=${encodeURIComponent(query)}&type=track,album,playlist&limit=5`,
+        {
+            headers: { Authorization: `Bearer ${token}` },
         }
-    });
+    );
 
     const data = await response.json();
-    res.json(data.tracks.items || []);
+    const allItems = [
+        ...(data.tracks?.items || []),
+        ...(data.albums?.items || []),
+        ...(data.playlists?.items || [])
+    ];
+
+    res.json(allItems);
 });
+
 
 
 

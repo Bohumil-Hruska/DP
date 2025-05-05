@@ -11,6 +11,8 @@ const SpotifyPlayerFull = ( {showMessage}) => {
     const [volume, setVolume] = useState(50);
     const [error, setError] = useState('');
     const [success, setSuccess] = useState('');
+    const [contextUri, setContextUri] = useState('');
+
 
     useEffect(() => {
         fetchDevices();
@@ -51,12 +53,13 @@ const SpotifyPlayerFull = ( {showMessage}) => {
         try {
             await axios.post('/api/spotify/play', {
                 deviceId: selectedDevice,
-                trackUri,
+                trackUri: contextUri ? null : trackUri,
+                contextUri: contextUri || null,
             }, { withCredentials: true });
-            showMessage('Skladba byla spuštěna!', false);
+            showMessage('Přehrávání spuštěno!', false);
             fetchCurrentTrack();
         } catch {
-            showMessage('Nepodařilo se spustit skladbu.', true);
+            showMessage('Nepodařilo se spustit přehrávání.', true);
         }
     };
 
@@ -109,26 +112,34 @@ const SpotifyPlayerFull = ( {showMessage}) => {
                 </div>
             </div>
 
-            {searchResults.length > 0 && (
-                <div className="list-group mb-4">
-                    {searchResults.map(track => (
-                        <button
-                            key={track.id}
-                            className="list-group-item list-group-item-action d-flex align-items-center"
-                            onClick={() => {
-                                setTrackUri(track.uri);
-                                setSuccess(`Vybrána skladba: ${track.name}`);
-                            }}
-                        >
-                            <img src={track.album.images[2]?.url} alt="" width="40" className="me-3" />
-                            <div>
-                                <strong>{track.name}</strong><br />
-                                <small>{track.artists.map(a => a.name).join(', ')}</small>
-                            </div>
-                        </button>
-                    ))}
-                </div>
-            )}
+            {searchResults.map(item => {
+                const isTrack = item.type === 'track';
+                const displayName = isTrack ? item.name : item.name + ' (celé album/playlist)';
+                const image = item.album?.images?.[2]?.url || item.images?.[2]?.url;
+
+                return (
+                    <button
+                        key={item.id}
+                        className="list-group-item list-group-item-action d-flex align-items-center"
+                        onClick={() => {
+                            if (isTrack) {
+                                setTrackUri(item.uri);
+                                setContextUri('');
+                            } else {
+                                setContextUri(item.uri);
+                                setTrackUri('');
+                            }
+                            showMessage(`Vybráno: ${displayName}`, false);
+                        }}
+                    >
+                        <img src={image} alt="" width="40" className="me-3" />
+                        <div>
+                            <strong>{displayName}</strong><br />
+                            <small>{item.artists?.map(a => a.name).join(', ')}</small>
+                        </div>
+                    </button>
+                );
+            })}
 
             {/* Přehrát tlačítko */}
             {trackUri && (
