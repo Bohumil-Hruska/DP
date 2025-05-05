@@ -11,6 +11,7 @@ import UnregisteredDevices from './views/UnregisteredDevices';
 import RoomManager from './views/RoomManager';
 import BluetoothDevices from './views/BluetoothDevices';
 import { turnOnDevice, turnOffDevice, registerUser, loginUser, logoutUser } from './api';
+import SpotifyPlayer from "./views/SpotifyPlayer";
 
 function App() {
   const [isLoggedIn, setIsLoggedIn] = useState(false);
@@ -97,6 +98,7 @@ function App() {
                         <Route path="/automation" element={<AutomationManager />} />
                         <Route path="/add-device" element={<UnregisteredDevices />} />
                         <Route path="/bluetooth" element={<BluetoothDevices />} />
+                        <Route path="/spotify-player" element={<SpotifyPlayer />} />
                         <Route path="*" element={<Navigate to="/" />} />
                       </>
                   )}

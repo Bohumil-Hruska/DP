@@ -187,6 +187,33 @@ app.get('/api/spotify/devices', async (req, res) => {
     res.json(data);
 });
 
+app.post('/api/spotify/play', async (req, res) => {
+    const token = req.cookies.spotify_access_token;
+    if (!token) return res.status(401).json({ error: 'Not authenticated' });
+
+    const { deviceId, trackUri } = req.body;
+
+    const playResponse = await fetch(`https://api.spotify.com/v1/me/player/play?device_id=${deviceId}`, {
+        method: 'PUT',
+        headers: {
+            'Authorization': `Bearer ${token}`,
+            'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({
+            uris: [trackUri],
+        }),
+    });
+
+    if (playResponse.ok) {
+        res.json({ success: true });
+    } else {
+        const err = await playResponse.json();
+        console.error('Spotify play error:', err);
+        res.status(500).json({ error: err });
+    }
+});
+
+
 
 
 
