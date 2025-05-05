@@ -108,49 +108,48 @@ const SpotifyPlayer = ({ showMessage }) => {
             </div>
 
             {/* Výsledky hledání */}
-            {searchResults.length > 0 && (
-                <div className="list-group mb-4">
-                    {searchResults.map(item => {
-                        const isTrack = item.type === 'track';
-                        const image = isTrack
-                            ? item.album?.images?.[2]?.url
-                            : item.images?.[2]?.url;
+            {searchResults
+                .filter(item => item && item.type) // ← ochrana proti null
+                .map(item => {
+                    const isTrack = item.type === 'track';
+                    const image = isTrack
+                        ? item.album?.images?.[2]?.url
+                        : item.images?.[2]?.url;
 
-                        const displayName = isTrack
-                            ? item.name
-                            : `${item.name} (${item.type})`;
+                    const displayName = isTrack
+                        ? item.name
+                        : `${item.name} (${item.type})`;
 
-                        const secondaryText = isTrack
-                            ? item.artists?.map(a => a.name).join(', ')
-                            : item.owner?.display_name || '';
+                    const secondaryText = isTrack
+                        ? item.artists?.map(a => a.name).join(', ')
+                        : item.owner?.display_name || '';
 
-                        return (
-                            <button
-                                key={item.id}
-                                className="list-group-item list-group-item-action d-flex align-items-center"
-                                onClick={() => {
-                                    if (isTrack) {
-                                        setTrackUri(item.uri);
-                                        setContextUri('');
-                                    } else {
-                                        setContextUri(item.uri);
-                                        setTrackUri('');
-                                    }
-                                    showMessage(`Vybráno: ${displayName}`, false);
-                                }}
-                            >
-                                {image && (
-                                    <img src={image} alt="" width="40" className="me-3" />
-                                )}
-                                <div>
-                                    <strong>{displayName}</strong><br />
-                                    <small>{secondaryText}</small>
-                                </div>
-                            </button>
-                        );
-                    })}
-                </div>
-            )}
+                    return (
+                        <button
+                            key={item.id}
+                            className="list-group-item list-group-item-action d-flex align-items-center"
+                            onClick={() => {
+                                if (isTrack) {
+                                    setTrackUri(item.uri);
+                                    setContextUri('');
+                                } else {
+                                    setContextUri(item.uri);
+                                    setTrackUri('');
+                                }
+                                showMessage(`Vybráno: ${displayName}`, false);
+                            }}
+                        >
+                            {image && (
+                                <img src={image} alt="" width="40" className="me-3" />
+                            )}
+                            <div>
+                                <strong>{displayName}</strong><br />
+                                <small>{secondaryText}</small>
+                            </div>
+                        </button>
+                    );
+                })}
+
 
             {/* Tlačítko přehrát */}
             {(trackUri || contextUri) && (
