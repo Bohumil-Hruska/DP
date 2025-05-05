@@ -162,7 +162,6 @@ app.get('/callback', async (req, res) => {
             sameSite: 'Strict',
             maxAge: 3600 * 1000
         });
-        res.redirect('/spotify-player');
     } else {
         res.status(400).send('Chyba při přihlášení ke Spotify');
     }
