@@ -27,11 +27,16 @@ let users = loadUsers();
 
 const { execSync } = require('child_process');
 
+const ttsLocalRoutes = require("./routes/ttsLocal");
+
+
+
 
 const app = express();
 app.use(cookieParser());
 app.use(cors());
 app.use(bodyParser.json());
+app.use(ttsLocalRoutes);
 const PORT = 3000;
 
 attachTtsWs(app);

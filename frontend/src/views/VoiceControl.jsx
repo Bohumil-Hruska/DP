@@ -1,26 +1,79 @@
 import React, { useState, useEffect, useRef } from "react";
 import { Link } from "react-router-dom";
-import axios from 'axios';
-import { useTtsStreamer } from "../hooks/useTssStreamer";
+import axios from "axios";
 
 const VoiceControl = ({ showMessage }) => {
     const [listening, setListening] = useState(false);
     const [recognized, setRecognized] = useState("");
+
     const wsRef = useRef(null);
     const audioContextRef = useRef(null);
     const processorRef = useRef(null);
     const streamRef = useRef(null);
     const lastCommandRef = useRef({ text: "", ts: 0 });
 
+    // ✅ jeden audio přehrávač pro celou komponentu
+    const ttsAudioRef = useRef(null);
 
-    const { speak, getAudioEl } = useTtsStreamer("wss://app.rb4home.eu/ws/tts");
+    // ✅ Autoplay unlock (udělá se při user gesture)
+    const unlockAudio = async () => {
+        try {
+            const a = new Audio();
+            a.muted = true;
+            await a.play();
+            a.pause();
+        } catch {
+            // některé prohlížeče to prostě ignorují – nevadí
+        }
+    };
+
+    // ✅ hlavní TTS – zavolá backend /api/tts a přehraje WAV
+    const speakHuman = async (text) => {
+        const msg = (text || "").toString().trim();
+        if (!msg) return;
+
+        // stopni předchozí
+        if (ttsAudioRef.current) {
+            try { ttsAudioRef.current.pause(); } catch {}
+            ttsAudioRef.current = null;
+        }
+
+        const resp = await fetch("/api/tts", {
+            method: "POST",
+            headers: { "Content-Type": "application/json" },
+            body: JSON.stringify({ text: msg }),
+        });
+
+        if (!resp.ok) throw new Error("TTS failed");
+
+        const blob = await resp.blob();
+        const url = URL.createObjectURL(blob);
+
+        const a = new Audio(url);
+        a.volume = 1.0;
+        ttsAudioRef.current = a;
+
+        a.onended = () => {
+            URL.revokeObjectURL(url);
+            if (ttsAudioRef.current === a) ttsAudioRef.current = null;
+        };
+        a.onerror = () => {
+            URL.revokeObjectURL(url);
+            if (ttsAudioRef.current === a) ttsAudioRef.current = null;
+        };
+
+        await a.play();
+    };
 
     const startRecording = async () => {
         if (listening) return;
         setListening(true);
 
+        // ✅ odemkni audio hned na začátku (klik uživatele)
+        await unlockAudio();
+
         try {
-            wsRef.current = new WebSocket("wss://app.rb4home.eu/ws/"); // tvůj Python server
+            wsRef.current = new WebSocket("wss://app.rb4home.eu/ws/"); // tvůj STT server
             wsRef.current.binaryType = "arraybuffer";
 
             wsRef.current.onmessage = (msg) => {
@@ -30,9 +83,7 @@ const VoiceControl = ({ showMessage }) => {
                 const now = Date.now();
                 const last = lastCommandRef.current;
 
-                // ✅ pokud stejné jako minule a do 1200 ms, ignoruj
                 if (text === last.text && (now - last.ts) < 1200) return;
-
                 lastCommandRef.current = { text, ts: now };
 
                 setRecognized(text);
@@ -40,12 +91,11 @@ const VoiceControl = ({ showMessage }) => {
                 sendCommandToNode(text);
             };
 
-
             const stream = await navigator.mediaDevices.getUserMedia({ audio: true });
             streamRef.current = stream;
 
             audioContextRef.current = new (window.AudioContext || window.webkitAudioContext)({
-                sampleRate: 16000, // Google STT funguje dobře na 16 kHz
+                sampleRate: 16000,
             });
 
             const source = audioContextRef.current.createMediaStreamSource(stream);
@@ -60,7 +110,13 @@ const VoiceControl = ({ showMessage }) => {
             };
 
             source.connect(processor);
-            processor.connect(audioContextRef.current.destination);
+
+            // ⚠️ Tohle ti dělá “monitoring” do repro (echo).
+            // Pokud chceš, aby to NEHRÁLO mikrofon do repro, nech to odpojené:
+            // processor.connect(audioContextRef.current.destination);
+            // Místo toho:
+            processor.connect(audioContextRef.current.destination); // můžeš zkusit zakomentovat
+
             processorRef.current = processor;
 
             showMessage("🎤 Nepřetržitý poslech spuštěn", false);
@@ -68,17 +124,19 @@ const VoiceControl = ({ showMessage }) => {
             showMessage("Chyba: " + err.message, true);
             setListening(false);
         }
-        getAudioEl()?.play().catch(() => {});
     };
 
     const stopRecording = () => {
         setListening(false);
+
         if (processorRef.current) processorRef.current.disconnect();
         if (audioContextRef.current) audioContextRef.current.close();
+
         if (streamRef.current) {
             streamRef.current.getTracks().forEach((t) => t.stop());
         }
         if (wsRef.current) wsRef.current.close();
+
         showMessage("⏹️ Poslech zastaven", false);
     };
 
@@ -86,41 +144,27 @@ const VoiceControl = ({ showMessage }) => {
         try {
             console.log("[VOICE] sending command:", text);
 
-            const res = await axios.post('/api/voice/execute', { command: text }, { withCredentials: true });
+            const res = await axios.post(
+                "/api/voice/execute",
+                { command: text },
+                { withCredentials: true }
+            );
+
             console.log("[VOICE] backend response:", res.data);
 
-            const message = res.data.message || 'Příkaz zpracován.';
+            const message = res.data.message || "Příkaz zpracován.";
             showMessage(message, false);
 
-            console.log("[VOICE] speaking:", message);
-            speak(message);
-
-// ✅ play až po malé prodlevě (MediaSource se mezitím otevře)
-            setTimeout(() => {
-                const a = getAudioEl();
-                if (!a) return;
-
-                // volitelně: nastav hlasitost
-                a.volume = 1.0;
-
-                a.play()
-                    .then(() => console.log("[VOICE] audio.play() OK"))
-                    .catch((e) => console.warn("[VOICE] audio.play() failed:", e));
-            }, 250);
-
-
-
+            console.log("[VOICE] speaking (human):", message);
+            await speakHuman(message);
         } catch (err) {
             console.error("[VOICE] execute error:", err);
-            showMessage('Chyba při vykonávání příkazu.', true);
+            showMessage("Chyba při vykonávání příkazu.", true);
 
-            speak('Nastala chyba při vykonávání příkazu.');
-            getAudioEl()?.play().catch(() => {});
+            // zkus říct chybu taky
+            speakHuman("Nastala chyba při vykonávání příkazu.").catch(() => {});
         }
     };
-
-
-
 
     const floatTo16BitPCM = (float32Array) => {
         const buffer = new ArrayBuffer(float32Array.length * 2);
@@ -135,6 +179,7 @@ const VoiceControl = ({ showMessage }) => {
 
     useEffect(() => {
         return () => stopRecording();
+        // eslint-disable-next-line react-hooks/exhaustive-deps
     }, []);
 
     return (
@@ -148,17 +193,15 @@ const VoiceControl = ({ showMessage }) => {
 
             <button
                 className="btn btn-outline-secondary ms-2"
-                onClick={() => {
+                onClick={async () => {
                     const msg = "Test hlasové odezvy funguje.";
                     showMessage(msg, false);
-                    speak(msg);
-                    setTimeout(() => getAudioEl()?.play().catch(() => {
-                    }), 250);
+                    await unlockAudio();
+                    speakHuman(msg).catch(console.warn);
                 }}
             >
                 🔈 Test TTS
             </button>
-
 
             {!listening ? (
                 <button className="btn btn-primary" onClick={startRecording}>
