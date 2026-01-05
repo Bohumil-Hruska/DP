@@ -1,7 +1,6 @@
 import React, { useState, useEffect, useRef } from "react";
 import { Link } from "react-router-dom";
 import axios from 'axios';
-import { useTtsStreamer } from "../hooks/useTssStreamer";
 
 const VoiceControl = ({ showMessage }) => {
     const [listening, setListening] = useState(false);
@@ -12,14 +11,61 @@ const VoiceControl = ({ showMessage }) => {
     const streamRef = useRef(null);
     const lastCommandRef = useRef({ text: "", ts: 0 });
 
+    const ttsAudioRef = useRef(null);
+
+    const unlockAudio = async () => {
+        try {
+            const a = new Audio();
+            a.muted = true;
+            await a.play();
+            a.pause();
+        } catch {}
+    };
+
+    const speakHuman = async (text) => {
+        const msg = (text || "").toString().trim();
+        if (!msg) return;
+
+        // stop předchozí audio, ať se to nepřekrývá
+        if (ttsAudioRef.current) {
+            try { ttsAudioRef.current.pause(); } catch {}
+            ttsAudioRef.current = null;
+        }
+
+        const r = await fetch("/api/tts", {
+            method: "POST",
+            headers: { "Content-Type": "application/json" },
+            body: JSON.stringify({ text: msg }),
+        });
+
+        if (!r.ok) throw new Error("TTS failed: " + r.status);
+
+        const blob = await r.blob();
+        const url = URL.createObjectURL(blob);
+
+        const a = new Audio(url);
+        a.volume = 1.0;
+        ttsAudioRef.current = a;
+
+        a.onended = () => {
+            URL.revokeObjectURL(url);
+            if (ttsAudioRef.current === a) ttsAudioRef.current = null;
+        };
+        a.onerror = () => {
+            URL.revokeObjectURL(url);
+            if (ttsAudioRef.current === a) ttsAudioRef.current = null;
+        };
+
+        await a.play();
+    };
 
 
-
-    const { speak, getAudioEl } = useTtsStreamer("wss://app.rb4home.eu/ws/tts");
 
     const startRecording = async () => {
         if (listening) return;
         setListening(true);
+        await unlockAudio();
+
 
         try {
             wsRef.current = new WebSocket("wss://app.rb4home.eu/ws/"); // tvůj Python server
@@ -70,7 +116,6 @@ const VoiceControl = ({ showMessage }) => {
             showMessage("Chyba: " + err.message, true);
             setListening(false);
         }
-        getAudioEl()?.play().catch(() => {});
     };
 
     const stopRecording = () => {
@@ -95,29 +140,15 @@ const VoiceControl = ({ showMessage }) => {
             showMessage(message, false);
 
             console.log("[VOICE] speaking:", message);
-            speak(message);
+            speakHuman(message).catch((e) => console.warn("[VOICE] TTS failed:", e));
 
-// ✅ play až po malé prodlevě (MediaSource se mezitím otevře)
-            setTimeout(() => {
-                const a = getAudioEl();
-                if (!a) return;
-
-                // volitelně: nastav hlasitost
-                a.volume = 1.0;
-
-                a.play()
-                    .then(() => console.log("[VOICE] audio.play() OK"))
-                    .catch((e) => console.warn("[VOICE] audio.play() failed:", e));
-            }, 250);
 
 
 
         } catch (err) {
             console.error("[VOICE] execute error:", err);
             showMessage('Chyba při vykonávání příkazu.', true);
-
-            speak('Nastala chyba při vykonávání příkazu.');
-            getAudioEl()?.play().catch(() => {});
+            speakHuman("Nastala chyba při vykonávání příkazu.").catch(() => {});
         }
     };
 
@@ -150,13 +181,13 @@ const VoiceControl = ({ showMessage }) => {
 
             <button
                 className="btn btn-outline-secondary ms-2"
-                onClick={() => {
+                onClick={async () => {
                     const msg = "Test hlasové odezvy funguje.";
                     showMessage(msg, false);
-                    speak(msg);
-                    setTimeout(() => getAudioEl()?.play().catch(() => {
-                    }), 250);
+                    await unlockAudio();
+                    speakHuman(msg).catch(console.warn);
                 }}
+
             >
                 🔈 Test TTS
             </button>
