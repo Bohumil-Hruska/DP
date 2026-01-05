@@ -10,9 +10,13 @@ function normalize(str) {
 // Porovnání místnosti včetně koncovek
 function matchRoomName(text, roomName) {
     const base = normalize(roomName);
-    const pattern = new RegExp(`\\b${base}\\b`, 'i');
+    // ✅ dovolí: pokojicek, pokojicku, pokojickem...
+    // escape pro případ mezer/znaků
+    const escaped = base.replace(/[.*+?^${}()|[\]\\]/g, "\\$&");
+    const pattern = new RegExp(`\\b${escaped}\\p{L}*\\b`, 'iu');
     return pattern.test(normalize(text));
 }
+
 
 function parseIntent(command) {
     const text = normalize(command.trim());

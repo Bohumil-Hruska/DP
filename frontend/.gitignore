@@ -8,6 +8,12 @@
 # testing
 /coverage
 
+.env
+node_modules/
+frontend/node_modules/
+frontend/build/
+
+
 # production
 /build
 
