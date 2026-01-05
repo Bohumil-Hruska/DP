@@ -17,7 +17,7 @@ const SECRET = process.env.JWT_SECRET;
 const authenticate = require('./middleware/authenticate');
 const ensureSpotifyToken = require('./middleware/spotifyAuth');
 const { attachTtsWs } = require("./middleware/ws-tss");
-const ttsLocalRoutes = require('./routes/ttsLocal');
+const ttsLocalRoutes = require('./routes/ttsEleven');
 
 const USERS_FILE = path.join(__dirname, 'users.json');
 const loadUsers = () => fs.existsSync(USERS_FILE) ? JSON.parse(fs.readFileSync(USERS_FILE)) : [];
