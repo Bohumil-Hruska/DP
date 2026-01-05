@@ -12,65 +12,74 @@ const VoiceControl = ({ showMessage }) => {
     const streamRef = useRef(null);
     const lastCommandRef = useRef({ text: "", ts: 0 });
 
-    // ✅ TTS audio + autoplay unlock
+    // TTS
     const ttsAudioRef = useRef(null);
-    const audioUnlockedRef = useRef(false);
+    const audioUnlockAttemptedRef = useRef(false);
 
-    const unlockAudio = async () => {
-        if (audioUnlockedRef.current) return;
+    // 🔒 nikdy neblokuj startRecording – žádné await
+    const tryUnlockAudio = () => {
+        if (audioUnlockAttemptedRef.current) return;
+        audioUnlockAttemptedRef.current = true;
+
         try {
             const a = new Audio();
             a.muted = true;
-            await a.play();
-            a.pause();
-            audioUnlockedRef.current = true;
+
+            const p = a.play();
+            // když promise existuje, tak jen chyť error, ale nečekej
+            if (p && typeof p.then === "function") {
+                p.then(() => {
+                    try { a.pause(); } catch {}
+                }).catch(() => {});
+            }
         } catch {
             // ignore
         }
     };
 
-    // ✅ “lidský” TTS přes backend /api/tts (Piper)
+    // “lidský hlas” přes /api/tts (Piper)
     const speak = async (text) => {
         const msg = (text || "").toString().trim();
         if (!msg) return;
 
-        // stop předchozí, ať se to nepřekrývá
+        // stop předchozí
         if (ttsAudioRef.current) {
             try { ttsAudioRef.current.pause(); } catch {}
             ttsAudioRef.current = null;
         }
 
-        const r = await fetch("/api/tts", {
-            method: "POST",
-            headers: { "Content-Type": "application/json" },
-            body: JSON.stringify({ text: msg }),
-        });
-
-        if (!r.ok) {
-            console.warn("[VOICE] /api/tts failed:", r.status);
-            return;
-        }
-
-        const blob = await r.blob();
-        const url = URL.createObjectURL(blob);
-
-        const a = new Audio(url);
-        a.volume = 1.0;
-        ttsAudioRef.current = a;
-
-        a.onended = () => {
-            URL.revokeObjectURL(url);
-            if (ttsAudioRef.current === a) ttsAudioRef.current = null;
-        };
-        a.onerror = () => {
-            URL.revokeObjectURL(url);
-            if (ttsAudioRef.current === a) ttsAudioRef.current = null;
-        };
-
         try {
-            await a.play();
+            const r = await fetch("/api/tts", {
+                method: "POST",
+                headers: { "Content-Type": "application/json" },
+                body: JSON.stringify({ text: msg }),
+            });
+
+            if (!r.ok) {
+                console.warn("[VOICE] /api/tts failed:", r.status);
+                return;
+            }
+
+            const blob = await r.blob();
+            const url = URL.createObjectURL(blob);
+
+            const a = new Audio(url);
+            a.volume = 1.0;
+            ttsAudioRef.current = a;
+
+            a.onended = () => {
+                URL.revokeObjectURL(url);
+                if (ttsAudioRef.current === a) ttsAudioRef.current = null;
+            };
+            a.onerror = () => {
+                URL.revokeObjectURL(url);
+                if (ttsAudioRef.current === a) ttsAudioRef.current = null;
+            };
+
+            // play může být blokovaný – ale to nesmí shodit vykonání příkazu
+            a.play().catch((e) => console.warn("[VOICE] audio.play blocked:", e));
         } catch (e) {
-            console.warn("[VOICE] audio.play() blocked:", e);
+            console.warn("[VOICE] speak() failed:", e);
         }
     };
 
@@ -78,12 +87,16 @@ const VoiceControl = ({ showMessage }) => {
         if (listening) return;
         setListening(true);
 
-        // ✅ důležité: unlock audio při kliknutí uživatele
-        await unlockAudio();
+        // ✅ neblokující unlock (jen pokus)
+        tryUnlockAudio();
 
         try {
             wsRef.current = new WebSocket("wss://app.rb4home.eu/ws/");
             wsRef.current.binaryType = "arraybuffer";
+
+            wsRef.current.onopen = () => console.log("[STT] WS open");
+            wsRef.current.onerror = (e) => console.warn("[STT] WS error", e);
+            wsRef.current.onclose = () => console.warn("[STT] WS closed");
 
             wsRef.current.onmessage = (msg) => {
                 const text = msg.data;
@@ -122,13 +135,14 @@ const VoiceControl = ({ showMessage }) => {
 
             source.connect(processor);
 
-            // Pokud ti to dělá echo, můžeš tenhle řádek zkusit zakomentovat:
+            // pokud máš echo, zkus odkomentovat další řádek a nechat processor "viset" bez destination
             processor.connect(audioContextRef.current.destination);
 
             processorRef.current = processor;
 
             showMessage("🎤 Nepřetržitý poslech spuštěn", false);
         } catch (err) {
+            console.error("[STT] startRecording error:", err);
             showMessage("Chyba: " + err.message, true);
             setListening(false);
         }
@@ -136,12 +150,16 @@ const VoiceControl = ({ showMessage }) => {
 
     const stopRecording = () => {
         setListening(false);
+
         if (processorRef.current) processorRef.current.disconnect();
         if (audioContextRef.current) audioContextRef.current.close();
-        if (streamRef.current) streamRef.current.getTracks().forEach((t) => t.stop());
+
+        if (streamRef.current) {
+            streamRef.current.getTracks().forEach((t) => t.stop());
+        }
         if (wsRef.current) wsRef.current.close();
 
-        // stopni TTS, když hraje
+        // stop TTS
         if (ttsAudioRef.current) {
             try { ttsAudioRef.current.pause(); } catch {}
             ttsAudioRef.current = null;
@@ -166,13 +184,14 @@ const VoiceControl = ({ showMessage }) => {
             showMessage(message, false);
 
             console.log("[VOICE] speaking:", message);
-            await unlockAudio();
+            // ✅ unlock jen pokus, nesmí blokovat
+            tryUnlockAudio();
             speak(message);
         } catch (err) {
             console.error("[VOICE] execute error:", err);
             showMessage("Chyba při vykonávání příkazu.", true);
 
-            await unlockAudio();
+            tryUnlockAudio();
             speak("Nastala chyba při vykonávání příkazu.");
         }
     };
