@@ -12,28 +12,29 @@ const VoiceControl = ({ showMessage }) => {
     const streamRef = useRef(null);
     const lastCommandRef = useRef({ text: "", ts: 0 });
 
-    // ✅ TTS audio player
+    // ✅ TTS audio + autoplay unlock
     const ttsAudioRef = useRef(null);
-    const unlockedRef = useRef(false);
+    const audioUnlockedRef = useRef(false);
 
     const unlockAudio = async () => {
-        if (unlockedRef.current) return;
+        if (audioUnlockedRef.current) return;
         try {
             const a = new Audio();
             a.muted = true;
             await a.play();
             a.pause();
-            unlockedRef.current = true;
+            audioUnlockedRef.current = true;
         } catch {
-            // nevadí, některé prohlížeče to ignorují
+            // ignore
         }
     };
 
-    const speakHuman = async (text) => {
+    // ✅ “lidský” TTS přes backend /api/tts (Piper)
+    const speak = async (text) => {
         const msg = (text || "").toString().trim();
         if (!msg) return;
 
-        // stop předchozí audio, aby se nepřekrývalo
+        // stop předchozí, ať se to nepřekrývá
         if (ttsAudioRef.current) {
             try { ttsAudioRef.current.pause(); } catch {}
             ttsAudioRef.current = null;
@@ -46,7 +47,8 @@ const VoiceControl = ({ showMessage }) => {
         });
 
         if (!r.ok) {
-            throw new Error(`TTS failed: ${r.status}`);
+            console.warn("[VOICE] /api/tts failed:", r.status);
+            return;
         }
 
         const blob = await r.blob();
@@ -65,14 +67,18 @@ const VoiceControl = ({ showMessage }) => {
             if (ttsAudioRef.current === a) ttsAudioRef.current = null;
         };
 
-        await a.play();
+        try {
+            await a.play();
+        } catch (e) {
+            console.warn("[VOICE] audio.play() blocked:", e);
+        }
     };
 
     const startRecording = async () => {
         if (listening) return;
         setListening(true);
 
-        // ✅ důležité: autoplay unlock při user gesture
+        // ✅ důležité: unlock audio při kliknutí uživatele
         await unlockAudio();
 
         try {
@@ -87,7 +93,7 @@ const VoiceControl = ({ showMessage }) => {
                 const last = lastCommandRef.current;
 
                 // pokud stejné jako minule a do 1200 ms, ignoruj
-                if (text === last.text && (now - last.ts) < 1200) return;
+                if (text === last.text && now - last.ts < 1200) return;
 
                 lastCommandRef.current = { text, ts: now };
 
@@ -116,7 +122,7 @@ const VoiceControl = ({ showMessage }) => {
 
             source.connect(processor);
 
-            // ⚠️ pokud ti to dělá echo, tohle odpoj:
+            // Pokud ti to dělá echo, můžeš tenhle řádek zkusit zakomentovat:
             processor.connect(audioContextRef.current.destination);
 
             processorRef.current = processor;
@@ -130,16 +136,12 @@ const VoiceControl = ({ showMessage }) => {
 
     const stopRecording = () => {
         setListening(false);
-
         if (processorRef.current) processorRef.current.disconnect();
         if (audioContextRef.current) audioContextRef.current.close();
-
-        if (streamRef.current) {
-            streamRef.current.getTracks().forEach((t) => t.stop());
-        }
+        if (streamRef.current) streamRef.current.getTracks().forEach((t) => t.stop());
         if (wsRef.current) wsRef.current.close();
 
-        // stopni TTS, pokud hraje
+        // stopni TTS, když hraje
         if (ttsAudioRef.current) {
             try { ttsAudioRef.current.pause(); } catch {}
             ttsAudioRef.current = null;
@@ -165,13 +167,13 @@ const VoiceControl = ({ showMessage }) => {
 
             console.log("[VOICE] speaking:", message);
             await unlockAudio();
-            speakHuman(message).catch((e) => console.warn("[VOICE] TTS failed:", e));
+            speak(message);
         } catch (err) {
             console.error("[VOICE] execute error:", err);
             showMessage("Chyba při vykonávání příkazu.", true);
 
             await unlockAudio();
-            speakHuman("Nastala chyba při vykonávání příkazu.").catch(() => {});
+            speak("Nastala chyba při vykonávání příkazu.");
         }
     };
 
@@ -199,18 +201,6 @@ const VoiceControl = ({ showMessage }) => {
                     Zpět na Dashboard
                 </Link>
             </div>
-
-            <button
-                className="btn btn-outline-secondary ms-2"
-                onClick={async () => {
-                    const msg = "Test hlasové odezvy funguje.";
-                    showMessage(msg, false);
-                    await unlockAudio();
-                    speakHuman(msg).catch(console.warn);
-                }}
-            >
-                🔈 Test TTS
-            </button>
 
             {!listening ? (
                 <button className="btn btn-primary" onClick={startRecording}>
