@@ -1,7 +1,7 @@
 import React, { useState, useEffect, useRef } from "react";
 import { Link } from "react-router-dom";
 import axios from 'axios';
-import { useTtsStreamer } from "../../../services/useTssStreamer";
+import { useTtsStreamer } from "../hooks/useTssStreamer";
 
 const VoiceControl = ({ showMessage }) => {
     const [listening, setListening] = useState(false);
