@@ -94,11 +94,20 @@ const VoiceControl = ({ showMessage }) => {
 
             console.log("[VOICE] speaking:", message);
             speak(message);
+
+// ✅ play až po malé prodlevě (MediaSource se mezitím otevře)
             setTimeout(() => {
-                getAudioEl()?.play()
+                const a = getAudioEl();
+                if (!a) return;
+
+                // volitelně: nastav hlasitost
+                a.volume = 1.0;
+
+                a.play()
                     .then(() => console.log("[VOICE] audio.play() OK"))
-                    .catch((e) => console.warn("[VOICE] audio.play() blocked:", e));
-            }, 150);
+                    .catch((e) => console.warn("[VOICE] audio.play() failed:", e));
+            }, 250);
+
 
 
         } catch (err) {
@@ -136,6 +145,20 @@ const VoiceControl = ({ showMessage }) => {
                     Zpět na Dashboard
                 </Link>
             </div>
+
+            <button
+                className="btn btn-outline-secondary ms-2"
+                onClick={() => {
+                    const msg = "Test hlasové odezvy funguje.";
+                    showMessage(msg, false);
+                    speak(msg);
+                    setTimeout(() => getAudioEl()?.play().catch(() => {
+                    }), 250);
+                }}
+            >
+                🔈 Test TTS
+            </button>
+
 
             {!listening ? (
                 <button className="btn btn-primary" onClick={startRecording}>

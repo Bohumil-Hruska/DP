@@ -83,8 +83,7 @@ export function useTtsStreamer(wsUrl = "wss://app.rb4home.eu/ws/tts") {
                         queueRef.current.push(buf);
                     }
 
-                    // pokus o autoplay (musí být po uživ. gestu – viz startRecord)
-                    try { await audioRef.current?.play(); } catch {}
+                    // try { await audioRef.current?.play(); } catch {}
                 };
             } catch (e) {
                 connectPromiseRef.current = null;
