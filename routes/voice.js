@@ -21,15 +21,32 @@ router.post('/api/voice/execute', async (req, res) => {
         return res.status(400).json({ message: 'Chybí hlasový příkaz.' });
     }
 
-
-    const token = req.cookies.spotify_access_token;
-    if (!token) return res.status(401).json({ message: 'Spotify není přihlášeno.' });
-
+    // ✅ 1) nejdřív intent
     const intent = parseIntent(command);
     if (!intent) {
         return res.json({ message: `Příkaz nerozpoznán: "${command}"` });
     }
+
     console.log('Voice intent:', intent);
+
+    // ✅ 2) Spotify token vyžaduj jen pro Spotify příkazy
+    const spotifyIntents = new Set([
+        'play_track',
+        'play_top_by_artist',
+        'play_playlist',
+        'volume',
+        'pause',
+        'resume',
+        'next'
+    ]);
+
+    const token = req.cookies.spotify_access_token;
+
+    if (spotifyIntents.has(intent.type) && !token) {
+        return res.status(401).json({ message: 'Spotify není přihlášeno.' });
+    }
+
+    // ✅ 3) switch
     switch (intent.type) {
         case 'play_track':
             return await handlePlayTrack(intent.query, token, res);
@@ -51,22 +68,19 @@ router.post('/api/voice/execute', async (req, res) => {
 
         case 'next':
             return await handleNext(token, res);
+
         case 'light_on': {
             const result = await handleDeviceOn(intent.deviceId, req.headers.authorization);
-            if (result.success) {
-                return res.json({ message: result.message });
-            } else {
-                return res.status(500).json({ message: result.message });
-            }
+            if (result.success) return res.json({ message: result.message });
+            return res.status(500).json({ message: result.message });
         }
+
         case 'light_off': {
             const result = await handleDeviceOff(intent.deviceId, req.headers.authorization);
-            if (result.success) {
-                return res.json({ message: result.message });
-            } else {
-                return res.status(500).json({ message: result.message });
-            }
+            if (result.success) return res.json({ message: result.message });
+            return res.status(500).json({ message: result.message });
         }
+
         case 'get_time': {
             const now = new Date();
             const hh = String(now.getHours()).padStart(2, '0');
@@ -78,8 +92,6 @@ router.post('/api/voice/execute', async (req, res) => {
             try {
                 const { getCurrentWeather } = require('../services/weatherService');
 
-                // Nejjednodušší varianta: použijeme pevnou lokaci z env (doporučení)
-                // nebo vezmeme lat/lon z requestu (viz níž)
                 const lat = req.body?.lat;
                 const lon = req.body?.lon;
 
@@ -98,7 +110,6 @@ router.post('/api/voice/execute', async (req, res) => {
             }
         }
 
-
         case 'create_note': {
             const { addNote } = require('../services/notesService');
             addNote(intent.text);
@@ -112,7 +123,6 @@ router.post('/api/voice/execute', async (req, res) => {
             const text = notes.map((n, i) => `${i + 1}. ${n.text}`).join(' ');
             return res.json({ message: `Tvoje poslední poznámky: ${text}` });
         }
-
 
         default:
             return res.json({ message: 'Příkaz nerozpoznán nebo není podporován.' });

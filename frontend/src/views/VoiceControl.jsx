@@ -170,31 +170,40 @@ const VoiceControl = ({ showMessage }) => {
 
     const sendCommandToNode = async (text) => {
         try {
-            console.log("[VOICE] sending command:", text);
+            let lat, lon;
+
+            // zkus získat polohu (není povinné)
+            if (navigator.geolocation) {
+                await new Promise((resolve) => {
+                    navigator.geolocation.getCurrentPosition(
+                        (pos) => {
+                            lat = pos.coords.latitude;
+                            lon = pos.coords.longitude;
+                            resolve();
+                        },
+                        () => resolve(),
+                        { timeout: 2000 }
+                    );
+                });
+            }
 
             const res = await axios.post(
                 "/api/voice/execute",
-                { command: text },
+                { command: text, lat, lon },
                 { withCredentials: true }
             );
 
-            console.log("[VOICE] backend response:", res.data);
-
             const message = res.data.message || "Příkaz zpracován.";
             showMessage(message, false);
-
-            console.log("[VOICE] speaking:", message);
-            // ✅ unlock jen pokus, nesmí blokovat
             tryUnlockAudio();
             speak(message);
         } catch (err) {
-            console.error("[VOICE] execute error:", err);
             showMessage("Chyba při vykonávání příkazu.", true);
-
             tryUnlockAudio();
             speak("Nastala chyba při vykonávání příkazu.");
         }
     };
+
 
     const floatTo16BitPCM = (float32Array) => {
         const buffer = new ArrayBuffer(float32Array.length * 2);
