@@ -84,38 +84,31 @@ const VoiceControl = ({ showMessage }) => {
 
     const sendCommandToNode = async (text) => {
         try {
-            let coords = {};
-            if (navigator.geolocation) {
-                await new Promise((resolve) => {
-                    navigator.geolocation.getCurrentPosition(
-                        (pos) => {
-                            coords = { lat: pos.coords.latitude, lon: pos.coords.longitude };
-                            resolve();
-                        },
-                        () => resolve(),
-                        { enableHighAccuracy: false, timeout: 2000 }
-                    );
-                });
-            }
+            console.log("[VOICE] sending command:", text);
 
-            const res = await axios.post(
-                '/api/voice/execute',
-                { command: text, ...coords },
-                { withCredentials: true }
-            );
+            const res = await axios.post('/api/voice/execute', { command: text }, { withCredentials: true });
+            console.log("[VOICE] backend response:", res.data);
 
             const message = res.data.message || 'Příkaz zpracován.';
             showMessage(message, false);
 
+            console.log("[VOICE] speaking:", message);
             speak(message);
-            getAudioEl()?.play().catch(() => {});   // ✅ přidej
+            getAudioEl()?.play().then(() => {
+                console.log("[VOICE] audio.play() OK");
+            }).catch((e) => {
+                console.warn("[VOICE] audio.play() blocked:", e);
+            });
+
         } catch (err) {
+            console.error("[VOICE] execute error:", err);
             showMessage('Chyba při vykonávání příkazu.', true);
 
             speak('Nastala chyba při vykonávání příkazu.');
-            getAudioEl()?.play().catch(() => {});   // ✅ přidej
+            getAudioEl()?.play().catch(() => {});
         }
     };
+
 
 
 

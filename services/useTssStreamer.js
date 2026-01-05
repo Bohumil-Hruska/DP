@@ -61,11 +61,19 @@ export function useTtsStreamer(wsUrl = "wss://app.rb4home.eu/ws/tts") {
                     }
 
                     // Binární audio chunk
+                    // Binární audio chunk
                     const sessionId = currentSessionRef.current;
                     if (!sessionId) return; // žádná aktivní session
 
-                    const buf = new Uint8Array(await evt.data.arrayBuffer());
+// ✅ evt.data je často už ArrayBuffer (binaryType="arraybuffer")
+                    const ab =
+                        evt.data instanceof ArrayBuffer
+                            ? evt.data
+                            : await evt.data.arrayBuffer();
+
+                    const buf = new Uint8Array(ab);
                     const sb = sourceBufferRef.current;
+
 
                     if (!mediaSourceRef.current || mediaSourceRef.current.readyState === "closed") return;
 
