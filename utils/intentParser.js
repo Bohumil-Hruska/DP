@@ -8,14 +8,30 @@ function normalize(str) {
 }
 
 // Porovnání místnosti včetně koncovek
-function matchRoomName(text, roomName) {
-    const base = normalize(roomName);
-    // ✅ dovolí: pokojicek, pokojicku, pokojickem...
-    // escape pro případ mezer/znaků
-    const escaped = base.replace(/[.*+?^${}()|[\]\\]/g, "\\$&");
-    const pattern = new RegExp(`\\b${escaped}\\p{L}*\\b`, 'iu');
-    return pattern.test(normalize(text));
+function escapeRegex(s) {
+    return s.replace(/[.*+?^${}()|[\]\\]/g, "\\$&");
 }
+
+// Porovnání místnosti tolerantní k pádům (pokojíček/pokojíčku/…)
+function matchRoomName(text, roomName) {
+    const t = normalize(text);
+
+    const base = normalize(roomName);         // pokojicek
+    const stems = [];
+
+    // vytvoř pár "kmenů" (odřízni konce) – min délka 4
+    for (let cut = 0; cut <= 3; cut++) {
+        const stem = base.slice(0, Math.max(0, base.length - cut));
+        if (stem.length >= 4) stems.push(stem);
+    }
+
+    // zkus matchnout jakýkoli kmen jako začátek slova
+    return stems.some(stem => {
+        const pattern = new RegExp(`\\b${escapeRegex(stem)}[a-z]*\\b`, "i");
+        return pattern.test(t);
+    });
+}
+
 
 
 function parseIntent(command) {

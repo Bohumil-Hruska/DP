@@ -4,6 +4,14 @@
     "name": "Ložnice",
     "devices": []
   },
+
+  {
+    "id": "...",
+    "name": "Pokojíček",
+    "aliases": ["pokoj", "detsky pokoj", "pokojicek", "pokojicku"],
+    "devices": []
+  },
+
   {
     "id": "1746275562592",
     "name": "Obývák",

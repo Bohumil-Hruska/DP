@@ -95,11 +95,9 @@ const VoiceControl = ({ showMessage }) => {
             console.log("[VOICE] speaking:", message);
             speak(message);
             setTimeout(() => {
-                getAudioEl()?.play().then(() => {
-                    console.log("[VOICE] audio.play() OK");
-                }).catch((e) => {
-                    console.warn("[VOICE] audio.play() blocked:", e);
-                });
+                getAudioEl()?.play()
+                    .then(() => console.log("[VOICE] audio.play() OK"))
+                    .catch((e) => console.warn("[VOICE] audio.play() blocked:", e));
             }, 150);
 
 
