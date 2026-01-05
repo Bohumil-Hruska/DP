@@ -85,7 +85,11 @@ router.post('/api/voice/execute', async (req, res) => {
             const now = new Date();
             const hh = String(now.getHours()).padStart(2, '0');
             const mm = String(now.getMinutes()).padStart(2, '0');
-            return res.json({ message: `Je ${hh}:${mm}.` });
+            if (mm === '00') {
+                return res.json({ message: `Je ${hh} hodin.` });
+            }
+            return res.json({ message: `Je ${hh} hodin ${mm} minut.` });
+
         }
 
         case 'get_weather': {
