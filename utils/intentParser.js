@@ -13,24 +13,23 @@ function escapeRegex(s) {
 }
 
 // Porovnání místnosti tolerantní k pádům (pokojíček/pokojíčku/…)
-function matchRoomName(text, roomName) {
-    const t = normalize(text);
-
-    const base = normalize(roomName);         // pokojicek
-    const stems = [];
-
-    // vytvoř pár "kmenů" (odřízni konce) – min délka 4
-    for (let cut = 0; cut <= 3; cut++) {
-        const stem = base.slice(0, Math.max(0, base.length - cut));
-        if (stem.length >= 4) stems.push(stem);
-    }
-
-    // zkus matchnout jakýkoli kmen jako začátek slova
-    return stems.some(stem => {
-        const pattern = new RegExp(`\\b${escapeRegex(stem)}[a-z]*\\b`, "i");
-        return pattern.test(t);
-    });
+function tokenize(text) {
+    return normalize(text)
+        .split(/[^a-z0-9]+/i)
+        .filter(Boolean);
 }
+
+function matchRoomName(text, roomAliasOrName) {
+    const tokens = tokenize(text);           // ["rozsvit", "svetlo", "v", "pokojicku"]
+    const alias = normalize(roomAliasOrName); // "pokojicek" / "pokojicku" / "pokoj" ...
+
+    // 1) přímý match tokenu
+    if (tokens.includes(alias)) return true;
+
+    // 2) tolerantní: alias je prefix tokenu (pokoj -> pokojicku)
+    return tokens.some(t => t.startsWith(alias) || alias.startsWith(t));
+}
+
 
 
 
@@ -118,17 +117,22 @@ function parseIntent(command) {
     }
 
     // 💡 Světla (zapnutí / vypnutí podle místnosti)
+    const wantsLight = /\bsvetlo\b|\bsvetla\b/.test(text);
+
     let action = null;
-    if (/(zhasni|vypni)/.test(text)) {
+    if (/\b(zhasni|vypni)\b/.test(text)) {
         action = 'off';
-    } else if (/(rozsvit|rozsviť|zapni|pust)/.test(text)) {
+    } else if (/\b(rozsvit|zapni|pust)\b/.test(text)) {
         action = 'on';
     }
 
-    // Pokud nemáme akci, vracíme null
+// ✅ default pro věty bez slovesa: "svetlo v pokojicku"
+    if (!action && wantsLight) action = 'on';
+
+// Pokud nemáme akci, vracíme null
     if (!action) return null;
 
-    // Hledáme místnost
+// Hledáme místnost
     let matchedRoom = null;
     for (const room of rooms) {
         const candidates = [room.name, ...(room.aliases || [])];
@@ -137,26 +141,12 @@ function parseIntent(command) {
             break;
         }
     }
-
-    // Pokud místnost nenajdeme, vracíme null
     if (!matchedRoom) return null;
 
-    // Najdeme zařízení
-    let device = null;
-
-    // 1. Pokud text obsahuje "svetlo|svetla"
-    if (/svetlo|svetla/.test(text)) {
-        device = matchedRoom.devices.find(d =>
-            normalize(d.name).includes('svetlo')
-        );
-    }
-
-    // 2. Pokud "svetlo" v textu není → fallback: vezmeme první zařízení typu světlo
-    if (!device) {
-        device = matchedRoom.devices.find(d =>
-            normalize(d.name).includes('svetlo') || d.type === 'light'
-        );
-    }
+// Najdeme zařízení
+    let device =
+        matchedRoom.devices.find(d => normalize(d.name).includes('svetlo')) ||
+        matchedRoom.devices.find(d => d.type === 'light');
 
     if (device) {
         return {
@@ -167,6 +157,7 @@ function parseIntent(command) {
     }
 
     return null;
+
 }
 
 module.exports = { parseIntent };
