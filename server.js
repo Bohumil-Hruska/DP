@@ -17,7 +17,7 @@ const SECRET = process.env.JWT_SECRET;
 const authenticate = require('./middleware/authenticate');
 const ensureSpotifyToken = require('./middleware/spotifyAuth');
 const { attachTtsWs } = require("./middleware/ws-tss");
-
+const ttsLocalRoutes = require('./routes/ttsLocal');
 
 const USERS_FILE = path.join(__dirname, 'users.json');
 const loadUsers = () => fs.existsSync(USERS_FILE) ? JSON.parse(fs.readFileSync(USERS_FILE)) : [];
@@ -27,8 +27,6 @@ let users = loadUsers();
 
 const { execSync } = require('child_process');
 
-const ttsLocalRoutes = require("./routes/ttsLocal");
-
 
 
 
@@ -36,7 +34,8 @@ const app = express();
 app.use(cookieParser());
 app.use(cors());
 app.use(bodyParser.json());
-app.use(ttsLocalRoutes);
+app.use(ttsLocalRoutes); // ✅ 
+
 const PORT = 3000;
 
 attachTtsWs(app);
