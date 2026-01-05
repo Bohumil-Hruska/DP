@@ -16,6 +16,7 @@ const jwt = require('jsonwebtoken');
 const SECRET = process.env.JWT_SECRET;
 const authenticate = require('./middleware/authenticate');
 const ensureSpotifyToken = require('./middleware/spotifyAuth');
+const { attachTtsWs } = require("./middleware/ws-tss");
 
 
 const USERS_FILE = path.join(__dirname, 'users.json');
@@ -32,6 +33,8 @@ app.use(cookieParser());
 app.use(cors());
 app.use(bodyParser.json());
 const PORT = 3000;
+
+attachTtsWs(app);
 
 
 const ROOMS_FILE = path.join(__dirname, 'rooms.json');
@@ -63,57 +66,91 @@ const client = mqtt.connect(options);
 const connectedDevices = {}; // Použijeme objekt místo Setu!
 
 
+// Po připojení k brokeru jen subscribe
 client.on('connect', function () {
     console.log('Connected to MQTT broker');
     client.subscribe('#', { qos: 1 });
 });
+
+
 
 client.on('error', function (error) {
     console.error('Error connecting to MQTT broker:', error);
 });
 
 client.on('message', function (topic, message) {
-    console.log('Received message:', topic, message.toString());
-
     const deviceId = topic.split('/')[0];
+    const msg = message.toString();
 
-    try {
-        const payload = JSON.parse(message.toString());
+    console.log(`[MQTT] Zpráva z ${topic}: ${msg}`);
 
-        // Získání hodnoty výstupu ze struktury např. { "switch:0": { output: true } }
-        const outputRaw = payload["switch:0"]?.output ?? payload.output;
-
-        // Interpretace jako zapnuto/vypnuto
-        const value = outputRaw === true ? 'zapnuto' :
-            outputRaw === false ? 'vypnuto' :
-                payload.value || payload.state || payload.status || '-';
-
+    // Pokud zařízení ještě není v connectedDevices, inicializuj ho
+    if (!connectedDevices[deviceId]) {
+        console.log(`[INIT] Nové zařízení detekováno: ${deviceId}`);
         connectedDevices[deviceId] = {
             id: deviceId,
-            name: payload.name || deviceId,
-            type: payload.type || 'unknown',
-            value,
+            name: deviceId,
+            type: 'unknown',
+            value: '-',
             status: 'online',
-            lastSeen: new Date().toISOString()
+            lastSeen: new Date().toISOString(),
+            initialized: false
         };
+    }
+
+    try {
+        const payload = JSON.parse(msg);
+        console.log(`[PARSE] JSON payload:`, payload);
+
+        const switchData = payload.params?.["switch:0"] ||
+            payload.result?.["switch:0"] ||
+            payload["switch:0"];
+
+        if (switchData) {
+            const output = switchData.output;
+            console.log(`[STATUS] ${deviceId} output: ${output}`);
+            connectedDevices[deviceId].value = output === true ? 'zapnuto'
+                : output === false ? 'vypnuto'
+                    : '-';
+        }
+
+        connectedDevices[deviceId].lastSeen = new Date().toISOString();
+        connectedDevices[deviceId].status = 'online';
+
+        // Pokud zařízení ještě nebylo dotázáno → pošli Shelly.GetStatus
+        if (!connectedDevices[deviceId].initialized) {
+            console.log(`[RPC] Vyžaduji status od ${deviceId}`);
+            client.publish(`${deviceId}/command/rpc`, JSON.stringify({
+                id: Date.now(),
+                method: "Shelly.GetStatus"
+            }), { qos: 1 });
+            connectedDevices[deviceId].initialized = true;
+        }
 
     } catch (err) {
-        // Pokud není JSON nebo chybí data
-        if (!connectedDevices[deviceId]) {
-            connectedDevices[deviceId] = {
-                id: deviceId,
-                name: deviceId,
-                type: 'unknown',
-                value: '-',
-                status: 'online',
-                lastSeen: new Date().toISOString()
-            };
-        } else {
+        console.log(`[ERROR] Chyba JSON.parse pro zprávu: ${msg}`);
+        if (msg === 'on' || msg === 'off') {
+            console.log(`[PLAIN] ${deviceId} poslal stav: ${msg}`);
+            connectedDevices[deviceId].value = msg === 'on' ? 'zapnuto' : 'vypnuto';
             connectedDevices[deviceId].lastSeen = new Date().toISOString();
             connectedDevices[deviceId].status = 'online';
+
+            if (!connectedDevices[deviceId].initialized) {
+                console.log(`[RPC] Vyžaduji status od ${deviceId}`);
+                client.publish(`${deviceId}/command/rpc`, JSON.stringify({
+                    id: Date.now(),
+                    method: "Shelly.GetStatus"
+                }), { qos: 1 });
+                connectedDevices[deviceId].initialized = true;
+            }
+        } else {
+            console.error('[UNHANDLED] Neznámý formát zprávy:', msg);
         }
     }
 });
+
+
+
 
 app.get('/callback', spotifyController.callback);
 app.use('/api',ensureSpotifyToken, spotifyRoutes);

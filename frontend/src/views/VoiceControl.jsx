@@ -1,94 +1,160 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect, useRef } from "react";
+import { Link } from "react-router-dom";
 import axios from 'axios';
-import {Link} from "react-router-dom";
+import { useTtsStreamer } from "../hooks/useTssStreamer";
 
 const VoiceControl = ({ showMessage }) => {
-    const [recording, setRecording] = useState(false);
-    const [commandText, setCommandText] = useState('');
-    const [recognized, setRecognized] = useState('');
+    const [listening, setListening] = useState(false);
+    const [recognized, setRecognized] = useState("");
+    const wsRef = useRef(null);
+    const audioContextRef = useRef(null);
+    const processorRef = useRef(null);
+    const streamRef = useRef(null);
+    const lastCommandRef = useRef({ text: "", ts: 0 });
+
+
+    const { speak, getAudioEl } = useTtsStreamer("wss://app.rb4home.eu/ws/tts");
 
     const startRecording = async () => {
-        setRecording(true);
-        setRecognized('');
+        if (listening) return;
+        setListening(true);
 
         try {
-            // ⚠️ Vždy ztiš na pevnou hodnotu 5
-            await axios.post('/api/spotify/volume', { volume: 5 }, { withCredentials: true });
+            wsRef.current = new WebSocket("wss://app.rb4home.eu/ws/"); // tvůj Python server
+            wsRef.current.binaryType = "arraybuffer";
+
+            wsRef.current.onmessage = (msg) => {
+                const text = msg.data;
+                if (!text) return;
+
+                const now = Date.now();
+                const last = lastCommandRef.current;
+
+                // ✅ pokud stejné jako minule a do 1200 ms, ignoruj
+                if (text === last.text && (now - last.ts) < 1200) return;
+
+                lastCommandRef.current = { text, ts: now };
+
+                setRecognized(text);
+                showMessage("Rozpoznán příkaz: " + text, false);
+                sendCommandToNode(text);
+            };
+
 
             const stream = await navigator.mediaDevices.getUserMedia({ audio: true });
-            const mediaRecorder = new MediaRecorder(stream);
-            const chunks = [];
+            streamRef.current = stream;
 
-            mediaRecorder.ondataavailable = (e) => chunks.push(e.data);
+            audioContextRef.current = new (window.AudioContext || window.webkitAudioContext)({
+                sampleRate: 16000, // Google STT funguje dobře na 16 kHz
+            });
 
-            mediaRecorder.onstop = async () => {
-                const blob = new Blob(chunks, { type: 'audio/webm' });
-                stream.getTracks().forEach(track => track.stop());
+            const source = audioContextRef.current.createMediaStreamSource(stream);
+            const processor = audioContextRef.current.createScriptProcessor(4096, 1, 1);
 
-                try {
-                    await sendAudioToPython(blob);
-                } catch (err) {
-                    showMessage('Chyba při odeslání audia.', true);
-                } finally {
-                    // ✅ Vždy nastav zpět na 50
-                    await axios.post('/api/spotify/volume', { volume: 50 }, { withCredentials: true });
+            processor.onaudioprocess = (e) => {
+                if (wsRef.current && wsRef.current.readyState === WebSocket.OPEN) {
+                    const input = e.inputBuffer.getChannelData(0);
+                    const int16 = floatTo16BitPCM(input);
+                    wsRef.current.send(int16);
                 }
             };
 
-            mediaRecorder.start();
+            source.connect(processor);
+            processor.connect(audioContextRef.current.destination);
+            processorRef.current = processor;
 
-            // Ukončit po 4 sekundách
-            setTimeout(() => {
-                mediaRecorder.stop();
-                setRecording(false);
-            }, 4000);
-
-        } catch (e) {
-            showMessage('Nelze získat mikrofon: ' + e.message, true);
-            setRecording(false);
+            showMessage("🎤 Nepřetržitý poslech spuštěn", false);
+        } catch (err) {
+            showMessage("Chyba: " + err.message, true);
+            setListening(false);
         }
+        getAudioEl()?.play().catch(() => {});
     };
 
-
-    const sendAudioToPython = async (blob) => {
-        const formData = new FormData();
-        formData.append('audio', blob, 'recording.wav');
-
-        try {
-            const res = await axios.post('/voice-api/recognize', formData);
-            if (res.data.text) {
-                setRecognized(res.data.text);
-                sendCommandToNode(res.data.text);
-            } else {
-                showMessage(res.data.error || 'Hlas nerozpoznán.', true);
-            }
-        } catch (err) {
-            showMessage('Chyba při odeslání do Python serveru.', true);
+    const stopRecording = () => {
+        setListening(false);
+        if (processorRef.current) processorRef.current.disconnect();
+        if (audioContextRef.current) audioContextRef.current.close();
+        if (streamRef.current) {
+            streamRef.current.getTracks().forEach((t) => t.stop());
         }
+        if (wsRef.current) wsRef.current.close();
+        showMessage("⏹️ Poslech zastaven", false);
     };
 
     const sendCommandToNode = async (text) => {
         try {
-            const res = await axios.post('/api/voice/execute', { command: text }, { withCredentials: true });
-            showMessage(res.data.message || 'Příkaz zpracován.', false);
+            let coords = {};
+            if (navigator.geolocation) {
+                await new Promise((resolve) => {
+                    navigator.geolocation.getCurrentPosition(
+                        (pos) => {
+                            coords = { lat: pos.coords.latitude, lon: pos.coords.longitude };
+                            resolve();
+                        },
+                        () => resolve(),
+                        { enableHighAccuracy: false, timeout: 2000 }
+                    );
+                });
+            }
+
+            const res = await axios.post(
+                '/api/voice/execute',
+                { command: text, ...coords },
+                { withCredentials: true }
+            );
+
+            const message = res.data.message || 'Příkaz zpracován.';
+            showMessage(message, false);
+
+            speak(message);
+            getAudioEl()?.play().catch(() => {});   // ✅ přidej
         } catch (err) {
             showMessage('Chyba při vykonávání příkazu.', true);
+
+            speak('Nastala chyba při vykonávání příkazu.');
+            getAudioEl()?.play().catch(() => {});   // ✅ přidej
         }
     };
+
+
+
+    const floatTo16BitPCM = (float32Array) => {
+        const buffer = new ArrayBuffer(float32Array.length * 2);
+        const view = new DataView(buffer);
+        let offset = 0;
+        for (let i = 0; i < float32Array.length; i++, offset += 2) {
+            let s = Math.max(-1, Math.min(1, float32Array[i]));
+            view.setInt16(offset, s < 0 ? s * 0x8000 : s * 0x7fff, true);
+        }
+        return buffer;
+    };
+
+    useEffect(() => {
+        return () => stopRecording();
+    }, []);
 
     return (
         <div className="container py-5">
             <div className="d-flex justify-content-between align-items-center mb-4">
                 <h2 className="mb-0">Hlasové ovládání</h2>
-                <Link to="/" className="btn btn-secondary">Zpět na Dashboard</Link>
+                <Link to="/" className="btn btn-secondary">
+                    Zpět na Dashboard
+                </Link>
             </div>
 
-            <button className="btn btn-primary mb-3" onClick={startRecording} disabled={recording}>
-                {recording ? '🎤 Nahrávám...' : '🎙️ Spustit nahrávání'}
-            </button>
+            {!listening ? (
+                <button className="btn btn-primary" onClick={startRecording}>
+                    🎙️ Spustit nepřetržitý poslech
+                </button>
+            ) : (
+                <button className="btn btn-danger" onClick={stopRecording}>
+                    ⏹️ Zastavit poslech
+                </button>
+            )}
 
             {recognized && (
-                <div className="alert alert-info">
+                <div className="alert alert-info mt-3">
                     Rozpoznaný příkaz: <strong>{recognized}</strong>
                 </div>
             )}

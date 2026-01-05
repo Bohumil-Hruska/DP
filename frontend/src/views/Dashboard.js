@@ -19,6 +19,7 @@ const Dashboard = ({handleLogout}) => {
     const [currentTrack, setCurrentTrack] = useState(null);
 
     useEffect(() => {
+        if (!spotifyLoggedIn) return;
         const fetchTrack = async () => {
             try {
                 const res = await axios.get('/api/spotify/current', { withCredentials: true });
@@ -158,7 +159,7 @@ const Dashboard = ({handleLogout}) => {
 
             <p className="text-muted mb-4 text-center text-md-start">Přehled vaší chytré domácnosti</p>
 
-            <div className="row row-cols-1 row-cols-sm-2 row-cols-md-3 row-cols-lg-4 g-4 align-items-stretch">
+            <div className="row row-cols-2 row-cols-sm-2 row-cols-md-3 row-cols-lg-4 g-4 align-items-stretch">
                 {/* Počasí */}
                 <div className="col">
                     <div className="card bg-dark text-white text-center shadow-sm rounded-4 h-100">
