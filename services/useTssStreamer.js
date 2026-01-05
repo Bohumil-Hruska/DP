@@ -131,31 +131,25 @@ export function useTtsStreamer(wsUrl = "wss://app.rb4home.eu/ws/tts") {
 
     // --- Pro nový stream vždy „resetni“ MediaSource a session
     const resetMediaSource = () => {
-        // zruš starý MediaSource a vytvoř nový
-        const oldMS = mediaSourceRef.current;
-        if (oldMS && oldMS.readyState === "open") {
-            try { oldMS.endOfStream(); } catch {}
-        }
-
-        const ms = new MediaSource();
-        mediaSourceRef.current = ms;
         queueRef.current = [];
 
-        const audio = audioRef.current;
-        URL.revokeObjectURL(audio.src);
-        audio.src = URL.createObjectURL(ms);
+        const ms = mediaSourceRef.current;
+        const sb = sourceBufferRef.current;
 
-        ms.addEventListener("sourceopen", () => {
-            const sb = ms.addSourceBuffer("audio/mpeg");
-            sourceBufferRef.current = sb;
-            sb.addEventListener("updateend", () => {
-                if (queueRef.current.length > 0 && !sb.updating) {
-                    const next = queueRef.current.shift();
-                    try { sb.appendBuffer(next); } catch {}
+        // pokud máme SourceBuffer, zkus jen vyčistit a začít znovu
+        if (ms && sb && ms.readyState === "open") {
+            try {
+                if (!sb.updating) {
+                    // smaž starý obsah bufferu (od 0 do "konce")
+                    const end = sb.buffered.length ? sb.buffered.end(sb.buffered.length - 1) : 0;
+                    if (end > 0) sb.remove(0, end);
                 }
-            });
-        });
+            } catch (e) {
+                // fallback: nic – když remove nejde, necháme to být
+            }
+        }
     };
+
 
     // --- Veřejná API: speak
     const speak = useCallback(async (text, opts = {}) => {
