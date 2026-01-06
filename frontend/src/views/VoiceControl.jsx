@@ -123,7 +123,7 @@ const VoiceControl = ({ showMessage }) => {
             });
 
             const source = audioContextRef.current.createMediaStreamSource(stream);
-            const processor = audioContextRef.current.createScriptProcessor(4096, 1, 1);
+            const processor = audioContextRef.current.createScriptProcessor(2048, 1, 1);
 
             processor.onaudioprocess = (e) => {
                 if (wsRef.current && wsRef.current.readyState === WebSocket.OPEN) {
@@ -168,24 +168,40 @@ const VoiceControl = ({ showMessage }) => {
         showMessage("⏹️ Poslech zastaven", false);
     };
 
+    const geoRef = useRef({ lat: null, lon: null, ts: 0 });
+
+    const getGeoCached = async () => {
+        const now = Date.now();
+        if (geoRef.current.lat && (now - geoRef.current.ts) < 5 * 60 * 1000) {
+            return geoRef.current;
+        }
+        if (!navigator.geolocation) return geoRef.current;
+
+        await new Promise((resolve) => {
+            navigator.geolocation.getCurrentPosition(
+                (pos) => {
+                    geoRef.current = {
+                        lat: pos.coords.latitude,
+                        lon: pos.coords.longitude,
+                        ts: Date.now(),
+                    };
+                    resolve();
+                },
+                () => resolve(),
+                { timeout: 800 }
+            );
+        });
+
+        return geoRef.current;
+    };
+
+
     const sendCommandToNode = async (text) => {
         try {
-            let lat, lon;
 
             // zkus získat polohu (není povinné)
-            if (navigator.geolocation) {
-                await new Promise((resolve) => {
-                    navigator.geolocation.getCurrentPosition(
-                        (pos) => {
-                            lat = pos.coords.latitude;
-                            lon = pos.coords.longitude;
-                            resolve();
-                        },
-                        () => resolve(),
-                        { timeout: 2000 }
-                    );
-                });
-            }
+            const { lat, lon } = await getGeoCached();
+
 
             const res = await axios.post(
                 "/api/voice/execute",
