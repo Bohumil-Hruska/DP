@@ -1,163 +1,230 @@
-const rooms = require('../rooms.json');
+// utils/intentParser.js
+const rooms = require("../rooms.json");
 
 function normalize(str) {
-    return str
+    return String(str || "")
         .toLowerCase()
         .normalize("NFD")
-        .replace(/[\u0300-\u036f]/g, "");
+        .replace(/[\u0300-\u036f]/g, "")
+        .trim();
 }
 
-// Porovnání místnosti včetně koncovek
-function escapeRegex(s) {
-    return s.replace(/[.*+?^${}()|[\]\\]/g, "\\$&");
-}
-
-// Porovnání místnosti tolerantní k pádům (pokojíček/pokojíčku/…)
+// rozdělení na tokeny (tolerantní k diakritice a oddělovačům)
 function tokenize(text) {
     return normalize(text)
         .split(/[^a-z0-9]+/i)
         .filter(Boolean);
 }
 
+// tolerantní porovnání místnosti (pády/koncovky)
 function matchRoomName(text, roomAliasOrName) {
-    const tokens = tokenize(text);           // ["rozsvit", "svetlo", "v", "pokojicku"]
-    const alias = normalize(roomAliasOrName); // "pokojicek" / "pokojicku" / "pokoj" ...
+    const tokens = tokenize(text);
+    const alias = normalize(roomAliasOrName);
 
     // 1) přímý match tokenu
     if (tokens.includes(alias)) return true;
 
-    // 2) tolerantní: alias je prefix tokenu (pokoj -> pokojicku)
-    return tokens.some(t => t.startsWith(alias) || alias.startsWith(t));
+    // 2) tolerantní: prefix match (pokoj -> pokojicku / pokojicek)
+    return tokens.some((t) => t.startsWith(alias) || alias.startsWith(t));
 }
 
+function cleanupAndRewrite(rawText) {
+    // vyhoď vycpávky, které často překáží
+    let t = normalize(rawText)
+        .replace(/\b(prosim|prosím|hele|ok|diky|diky moc|dik|ahoj|cau|čau)\b/g, " ")
+        .replace(/\s+/g, " ")
+        .trim();
 
+    // sjednocení synonym (aby parser byl jednodušší)
+    t = t
+        .replace(
+            /\b(rozsvit|rozsviť|rozsvitte|zapnout|zapni|zapnete|spust|spustit)\b/g,
+            " zapni "
+        )
+        .replace(/\b(zhasni|zhasnete|vypnout|vypni|vypnete)\b/g, " vypni ")
+        .replace(/\b(ztlum|ztis|ztisit|ztiš)\b/g, " ztis ")
+        .replace(/\b(zesil|nahlas|pridej|přidej)\b/g, " zesil ")
+        .replace(/\s+/g, " ")
+        .trim();
 
+    return t;
+}
+
+function findMatchedRoom(text) {
+    for (const room of rooms) {
+        const candidates = [room.name, ...(room.aliases || [])];
+        if (candidates.some((alias) => matchRoomName(text, alias))) return room;
+    }
+    return null;
+}
+
+function findLightDeviceInRoom(room, text) {
+    if (!room?.devices?.length) return null;
+
+    const t = normalize(text);
+
+    // 1) když uživatel řekne konkrétní typ (lampička/lampa/led/…)
+    const wantsLamp = /\b(lampa|lampicka|lampička)\b/.test(t);
+    const wantsLed = /\b(led|pasek|pasek)\b/.test(t);
+
+    const byName = (rx) =>
+        room.devices.find((d) => rx.test(normalize(d.name || "")));
+
+    // prioritní výběr podle slov v příkazu
+    if (wantsLamp) {
+        return (
+            byName(/\b(lampa|lampicka|lampička)\b/) ||
+            room.devices.find((d) => d.type === "light")
+        );
+    }
+
+    if (wantsLed) {
+        return (
+            byName(/\b(led|pasek|pásek)\b/) ||
+            room.devices.find((d) => d.type === "light")
+        );
+    }
+
+    // 2) obecně světlo
+    return (
+        byName(/\bsvetlo\b|\bsvetla\b|\blight\b/) ||
+        room.devices.find((d) => d.type === "light")
+    );
+}
 
 function parseIntent(command) {
-    const text = normalize(command.trim());
+    const t = cleanupAndRewrite(command);
+
+    if (!t) return null;
 
     // 🕒 Čas
-    if (/\b(kolik je hodin|kolik je cas|jakej je cas|jaký je čas|jaky je cas|čas prosím|cas prosim|řekni mi čas|rekni mi cas)\b/.test(text)) {
-        return { type: 'get_time' };
+    if (
+        /\b(kolik je hodin|kolik je cas|jakej je cas|jaky je cas|jaky je čas|jaky je čas|rekni mi cas|rekni mi čas|cas prosim|cas)\b/.test(
+            t
+        )
+    ) {
+        return { type: "get_time" };
     }
 
-// ☁️ Počasí (aktuální)
-    if (/\b(pocasi|počasí|jake je pocasi|jaké je počasí|jaky je pocasi|bude prset|bude pršet|prsi|prší)\b/.test(text)) {
-        return { type: 'get_weather' };
+    // ☁️ Počasí (aktuální)
+    if (
+        /\b(pocasi|jake je pocasi|jaky je pocasi|jaké je počasí|bude prset|prsi|prší)\b/.test(
+            t
+        )
+    ) {
+        return { type: "get_weather" };
     }
 
-
-    // 🕒 Kolik je hodin
-    if (/\b(kolik je hodin|kolik je cas|jakej je cas|jaký je čas|cas prosim|řekni mi čas|rekni mi cas)\b/.test(text)) {
-        return { type: 'get_time' };
-    }
-
-// 📝 Vytvoř poznámku
-    const noteMatch = text.match(/\b(vytvor|vytvoř|zapis|zapiš|poznamenej|poznamenejte|uloz|ulož)\b.*\b(poznamku|poznámku|poznamka|poznámka)?\b\s*:?\s*(.+)$/i);
+    // 📝 Vytvoř poznámku
+    const noteMatch = t.match(
+        /\b(vytvor|vytvor|zapis|zapis|poznamenej|poznamenejte|uloz|uloz)\b.*\b(poznamku|poznamka)?\b\s*:?\s*(.+)$/i
+    );
     if (noteMatch && noteMatch[3]) {
-        return { type: 'create_note', text: noteMatch[3].trim() };
+        return { type: "create_note", text: noteMatch[3].trim() };
     }
 
-// 📒 Vypsat poznámky
-    if (/\b(ukaž|ukaz|vypsat|vypis|zobraz|co mam v poznamkach|co mám v poznámkách|poznamky|poznámky)\b/.test(text)) {
-        return { type: 'list_notes' };
+    // 📒 Vypsat poznámky
+    if (
+        /\b(ukaz|uka[zž]|vypsat|vypis|zobraz|co mam v poznamkach|poznamky)\b/.test(
+            t
+        )
+    ) {
+        return { type: "list_notes" };
     }
 
-// ☁️ Počasí (zatím jen rozpoznání)
-    if (/\b(pocasi|počasí|jake bude pocasi|jaké bude počasí|prsi|pršet|bude prset|bude pršet)\b/.test(text)) {
-        return { type: 'get_weather' };
+    // --------------------------
+    // 💡 SVĚTLA (dej před Spotify, ať "pusť světlo..." nepadá do play_track)
+    // --------------------------
+    let action = null;
+    if (/\b(vypni|zhasni)\b/.test(t)) action = "off";
+    else if (/\b(zapni|rozsvit)\b/.test(t)) action = "on";
+
+    const mentionsLightWords = /\b(svetlo|svetla|lampa|lampicka|lampička|led)\b/.test(
+        t
+    );
+
+    // default: "svetlo v kuchyni" -> on
+    if (!action && mentionsLightWords) action = "on";
+
+    // umožni i "v kuchyni zhasni" (akce + místnost, i bez slova světlo)
+    if (action) {
+        const matchedRoom = findMatchedRoom(t);
+        if (matchedRoom) {
+            const device = findLightDeviceInRoom(matchedRoom, t);
+            if (device) {
+                return {
+                    type: action === "on" ? "light_on" : "light_off",
+                    deviceId: device.id,
+                    room: matchedRoom.name,
+                };
+            }
+            // když je místnost match, ale device nenalezeno, pořád vrať intent místnosti
+            // (backend může časem řešit "všechna světla v místnosti")
+            return {
+                type: action === "on" ? "light_on" : "light_off",
+                deviceId: null,
+                room: matchedRoom.name,
+            };
+        }
     }
 
+    // --------------------------
+    // 🎵 SPOTIFY
+    // --------------------------
 
-    // 👨‍🎤 Přehraj něco od interpreta — musí být první!
-    const playArtist = text.match(/\b(zahraj|pusť|hraj|přehraj).*(?:něco)?\s+(?:od|od kapely|zpěváka)\s+(.+)/i);
-    if (playArtist) {
-        return { type: 'play_top_by_artist', artist: playArtist[2] };
+    // 👨‍🎤 Přehraj něco od interpreta — musí být před track
+    const playArtist = t.match(
+        /\b(zahraj|pust|pusť|hraj|prehraj|přehraj).*(?:neco)?\s+(?:od|od kapely|zpevaka|zpeváka)\s+(.+)$/i
+    );
+    if (playArtist && playArtist[2]) {
+        return { type: "play_top_by_artist", artist: playArtist[2].trim() };
     }
 
-    // 🎧 Přehraj konkrétní skladbu
-    const playTrack = text.match(/\b(zahraj|pusť|přehraj|hraj)\s+(.+)/i);
-    if (playTrack) {
-        return { type: 'play_track', query: playTrack[2] };
-    }
-
-    // 📻 Playlist
-    const playPlaylist = text.match(/\b(pusť|zahraj|přehraj).*(playlist|seznam)\s+(.*)/i);
-    if (playPlaylist) {
-        return { type: 'play_playlist', name: playPlaylist[3] };
+    // 📻 Playlist (před track)
+    const playPlaylist = t.match(
+        /\b(pust|pusť|zahraj|prehraj|přehraj|hraj).*(playlist|seznam)\s+(.+)$/i
+    );
+    if (playPlaylist && playPlaylist[3]) {
+        return { type: "play_playlist", name: playPlaylist[3].trim() };
     }
 
     // 🔊 Hlasitost číselně
-    const volumeExplicit = text.match(/(?:hlasitost|volume)\s*(\d{1,3})/i);
+    const volumeExplicit = t.match(/(?:hlasitost|volume)\s*(\d{1,3})/i);
     if (volumeExplicit) {
-        return { type: 'volume', value: parseInt(volumeExplicit[1]) };
-    }
-
-    // 🔊 Ztlum / zesil bez čísel
-    if (text.includes('ztlum') || text.includes('ztis')) {
-        return { type: 'volume', value: 10 };
-    }
-    if (text.includes('nahlas') || text.includes('zesil')) {
-        return { type: 'volume', value: 90 };
-    }
-
-    // ⏸ Pauza
-    if (/\b(pauza|zastav)\b/.test(text)) {
-        return { type: 'pause' };
-    }
-
-    // ▶ Obnov
-    if (/\b(pokračuj|obnov|spust)\b/.test(text)) {
-        return { type: 'resume' };
-    }
-
-    // ⏭ Další skladba
-    if (/\b(dalsi|nasledujici)\b/.test(text)) {
-        return { type: 'next' };
-    }
-
-    // 💡 Světla (zapnutí / vypnutí podle místnosti)
-    const wantsLight = /\bsvetlo\b|\bsvetla\b/.test(text);
-
-    let action = null;
-    if (/\b(zhasni|vypni)\b/.test(text)) {
-        action = 'off';
-    } else if (/\b(rozsvit|zapni|pust)\b/.test(text)) {
-        action = 'on';
-    }
-
-// ✅ default pro věty bez slovesa: "svetlo v pokojicku"
-    if (!action && wantsLight) action = 'on';
-
-// Pokud nemáme akci, vracíme null
-    if (!action) return null;
-
-// Hledáme místnost
-    let matchedRoom = null;
-    for (const room of rooms) {
-        const candidates = [room.name, ...(room.aliases || [])];
-        if (candidates.some(alias => matchRoomName(text, alias))) {
-            matchedRoom = room;
-            break;
+        let v = parseInt(volumeExplicit[1], 10);
+        if (Number.isFinite(v)) {
+            v = Math.max(0, Math.min(100, v));
+            return { type: "volume", value: v };
         }
     }
-    if (!matchedRoom) return null;
 
-// Najdeme zařízení
-    let device =
-        matchedRoom.devices.find(d => normalize(d.name).includes('svetlo')) ||
-        matchedRoom.devices.find(d => d.type === 'light');
+    // 🔊 Ztiš / zesil bez čísel
+    if (/\bztis\b/.test(t)) return { type: "volume", value: 10 };
+    if (/\bzesil\b/.test(t)) return { type: "volume", value: 90 };
 
-    if (device) {
-        return {
-            type: action === 'on' ? 'light_on' : 'light_off',
-            deviceId: device.id,
-            room: matchedRoom.name
-        };
+    // ⏸ Pauza
+    if (/\b(pauza|zastav)\b/.test(t)) return { type: "pause" };
+
+    // ▶ Obnov
+    if (/\b(pokracuj|pokračuj|obnov)\b/.test(t)) return { type: "resume" };
+
+    // ⏭ Další
+    if (/\b(dalsi|další|nasledujici|následující)\b/.test(t)) return { type: "next" };
+
+    // 🎧 Přehraj konkrétní skladbu (poslední, chamtivé)
+    const playTrack = t.match(/\b(zahraj|pust|pusť|prehraj|přehraj|hraj)\s+(.+)$/i);
+    if (playTrack && playTrack[2]) {
+        const q = playTrack[2].trim();
+
+        // guard: pokud to vypadá jako světla, neskákej do Spotify
+        if (/\b(svetlo|svetla|lampa|lampicka|lampička|led|vypni|zhasni|zapni|rozsvit)\b/.test(q)) {
+            return null;
+        }
+
+        return { type: "play_track", query: q };
     }
 
     return null;
-
 }
 
 module.exports = { parseIntent };

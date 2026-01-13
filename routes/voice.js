@@ -21,6 +21,11 @@ const {
 router.post('/api/voice/execute', async (req, res) => {
     const { command } = req.body;
 
+    if (String(command).trim().length < 2) {
+        return res.json({ message: "Příkaz je příliš krátký." });
+    }
+
+
     if (!command) {
         return res.status(400).json({
             message: 'Chybí hlasový příkaz.'
