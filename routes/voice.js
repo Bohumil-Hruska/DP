@@ -1,7 +1,8 @@
 const express = require('express');
-const axios = require('axios');
 const router = express.Router();
+
 const { parseIntent } = require('../utils/intentParser');
+
 const {
     handlePlayTrack,
     handlePlayTopTrack,
@@ -14,6 +15,56 @@ const {
 
 const { handleDeviceOn, handleDeviceOff } = require('../services/deviceService');
 
+// --- Command gate (bez wake word) ---
+function isLikelyCommand(text) {
+    const t = (text || "").toLowerCase().trim();
+    if (!t) return false;
+
+    // 1) krátké "kecy"
+    const shortBan = new Set([
+        "jo", "aha", "no", "ok", "okej", "dobře", "jasně", "díky", "prosím",
+        "hm", "hmm", "mmm", "čau", "ahoj"
+    ]);
+    if (shortBan.has(t)) return false;
+
+    // 2) skórování "příkazovosti"
+    let score = 0;
+
+    // akční slovesa (příkazy)
+    const verbs = [
+        "zapni","vypni","rozsviť","zhasni",
+        "pusť","zahraj","přehraj","spusť",
+        "dej","nastav","ztiš","zesil","hlasitost",
+        "pauza","pozastav","pokračuj","resume","další","next",
+        "kolik je","kolik","čas","hodin",
+        "jaké je počasí","počasí"
+    ];
+    if (verbs.some(v => t.includes(v))) score += 2;
+
+    // zařízení / místnosti / světla
+    const homeWords = [
+        "světlo","světla","lampa","lampu","zásuv","bojler","ventilátor",
+        "kuchyň","obýv","ložnic","chodba","koupel","garáž","terasa"
+    ];
+    if (homeWords.some(w => t.includes(w))) score += 2;
+
+    // spotify / hudba
+    const musicWords = [
+        "spotify","playlist","playlistu","písnič","song","skladb","album","interpret",
+        "ztiš","zesil","hlasitost","pauza","další"
+    ];
+    if (musicWords.some(w => t.includes(w))) score += 2;
+
+    // 3) dlouhá věta bez jasné akce => spíš konverzace
+    const words = t.split(/\s+/).filter(Boolean);
+    if (words.length >= 9 && score < 2) score -= 2;
+
+    // 4) když je to otázka typu "a co..." bez akce, spíš ignoruj
+    if ((t.startsWith("a ") || t.startsWith("tak ")) && score < 2) score -= 1;
+
+    return score >= 2;
+}
+
 router.post('/api/voice/execute', async (req, res) => {
     const { command } = req.body;
 
@@ -21,7 +72,12 @@ router.post('/api/voice/execute', async (req, res) => {
         return res.status(400).json({ message: 'Chybí hlasový příkaz.' });
     }
 
-    // ✅ 1) nejdřív intent
+    // ✅ 0) Command gate (nejdřív odfiltruj běžnou řeč)
+    if (!isLikelyCommand(command)) {
+        return res.json({ message: 'Zachytil jsem řeč, ale nebyl to příkaz.' });
+    }
+
+    // ✅ 1) intent
     const intent = parseIntent(command);
     if (!intent) {
         return res.json({ message: `Příkaz nerozpoznán: "${command}"` });
@@ -85,11 +141,8 @@ router.post('/api/voice/execute', async (req, res) => {
             const now = new Date();
             const hh = String(now.getHours()).padStart(2, '0');
             const mm = String(now.getMinutes()).padStart(2, '0');
-            if (mm === '00') {
-                return res.json({ message: `Je ${hh} hodin.` });
-            }
+            if (mm === '00') return res.json({ message: `Je ${hh} hodin.` });
             return res.json({ message: `Je ${hh} hodin ${mm} minut.` });
-
         }
 
         case 'get_weather': {

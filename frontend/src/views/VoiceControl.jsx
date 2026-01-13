@@ -87,6 +87,7 @@ const VoiceControl = ({ showMessage }) => {
         if (listening) return;
         setListening(true);
 
+
         // ✅ neblokující unlock (jen pokus)
         tryUnlockAudio();
 
@@ -122,6 +123,9 @@ const VoiceControl = ({ showMessage }) => {
                 sampleRate: 16000,
             });
 
+            console.log("AudioContext sampleRate =", audioContextRef.current.sampleRate);
+
+
             const source = audioContextRef.current.createMediaStreamSource(stream);
             const processor = audioContextRef.current.createScriptProcessor(2048, 1, 1);
 
@@ -136,7 +140,7 @@ const VoiceControl = ({ showMessage }) => {
             source.connect(processor);
 
             // pokud máš echo, zkus odkomentovat další řádek a nechat processor "viset" bez destination
-            processor.connect(audioContextRef.current.destination);
+            // processor.connect(audioContextRef.current.destination);
 
             processorRef.current = processor;
 
