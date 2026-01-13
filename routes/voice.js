@@ -1,6 +1,7 @@
 const express = require('express');
 const axios = require('axios');
 const router = express.Router();
+
 const { parseIntent } = require('../utils/intentParser');
 const {
     handlePlayTrack,
@@ -12,19 +13,27 @@ const {
     handleNext
 } = require('../services/spotifyService');
 
-const { handleDeviceOn, handleDeviceOff } = require('../services/deviceService');
+const {
+    handleDeviceOn,
+    handleDeviceOff
+} = require('../services/deviceService');
 
 router.post('/api/voice/execute', async (req, res) => {
     const { command } = req.body;
 
     if (!command) {
-        return res.status(400).json({ message: 'Chybí hlasový příkaz.' });
+        return res.status(400).json({
+            message: 'Chybí hlasový příkaz.'
+        });
     }
 
     // ✅ 1) nejdřív intent
     const intent = parseIntent(command);
+
     if (!intent) {
-        return res.json({ message: `Příkaz nerozpoznán: "${command}"` });
+        return res.json({
+            message: `Příkaz nerozpoznán: "${command}"`
+        });
     }
 
     console.log('Voice intent:', intent);
@@ -43,7 +52,9 @@ router.post('/api/voice/execute', async (req, res) => {
     const token = req.cookies.spotify_access_token;
 
     if (spotifyIntents.has(intent.type) && !token) {
-        return res.status(401).json({ message: 'Spotify není přihlášeno.' });
+        return res.status(401).json({
+            message: 'Spotify není přihlášeno.'
+        });
     }
 
     // ✅ 3) switch
@@ -70,14 +81,28 @@ router.post('/api/voice/execute', async (req, res) => {
             return await handleNext(token, res);
 
         case 'light_on': {
-            const result = await handleDeviceOn(intent.deviceId, req.headers.authorization);
-            if (result.success) return res.json({ message: result.message });
+            const result = await handleDeviceOn(
+                intent.deviceId,
+                req.headers.authorization
+            );
+
+            if (result.success) {
+                return res.json({ message: result.message });
+            }
+
             return res.status(500).json({ message: result.message });
         }
 
         case 'light_off': {
-            const result = await handleDeviceOff(intent.deviceId, req.headers.authorization);
-            if (result.success) return res.json({ message: result.message });
+            const result = await handleDeviceOff(
+                intent.deviceId,
+                req.headers.authorization
+            );
+
+            if (result.success) {
+                return res.json({ message: result.message });
+            }
+
             return res.status(500).json({ message: result.message });
         }
 
@@ -85,11 +110,16 @@ router.post('/api/voice/execute', async (req, res) => {
             const now = new Date();
             const hh = String(now.getHours()).padStart(2, '0');
             const mm = String(now.getMinutes()).padStart(2, '0');
-            if (mm === '00') {
-                return res.json({ message: `Je ${hh} hodin.` });
-            }
-            return res.json({ message: `Je ${hh} hodin ${mm} minut.` });
 
+            if (mm === '00') {
+                return res.json({
+                    message: `Je ${hh} hodin.`
+                });
+            }
+
+            return res.json({
+                message: `Je ${hh} hodin ${mm} minut.`
+            });
         }
 
         case 'get_weather': {
@@ -100,7 +130,9 @@ router.post('/api/voice/execute', async (req, res) => {
                 const lon = req.body?.lon;
 
                 const weather = await getCurrentWeather(
-                    lat && lon ? { lat, lon } : { city: process.env.HOME_CITY || 'Prague' }
+                    lat && lon
+                        ? { lat, lon }
+                        : { city: process.env.HOME_CITY || 'Prague' }
                 );
 
                 const msg =
@@ -110,26 +142,44 @@ router.post('/api/voice/execute', async (req, res) => {
                 return res.json({ message: msg });
             } catch (e) {
                 console.error('Weather error:', e.message);
-                return res.json({ message: 'Počasí se nepodařilo načíst.' });
+                return res.json({
+                    message: 'Počasí se nepodařilo načíst.'
+                });
             }
         }
 
         case 'create_note': {
             const { addNote } = require('../services/notesService');
             addNote(intent.text);
-            return res.json({ message: `Poznámka uložena.` });
+
+            return res.json({
+                message: 'Poznámka uložena.'
+            });
         }
 
         case 'list_notes': {
             const { listNotes } = require('../services/notesService');
             const notes = listNotes(3);
-            if (notes.length === 0) return res.json({ message: `Nemáš žádné poznámky.` });
-            const text = notes.map((n, i) => `${i + 1}. ${n.text}`).join(' ');
-            return res.json({ message: `Tvoje poslední poznámky: ${text}` });
+
+            if (notes.length === 0) {
+                return res.json({
+                    message: 'Nemáš žádné poznámky.'
+                });
+            }
+
+            const text = notes
+                .map((n, i) => `${i + 1}. ${n.text}`)
+                .join(' ');
+
+            return res.json({
+                message: `Tvoje poslední poznámky: ${text}`
+            });
         }
 
         default:
-            return res.json({ message: 'Příkaz nerozpoznán nebo není podporován.' });
+            return res.json({
+                message: 'Příkaz nerozpoznán nebo není podporován.'
+            });
     }
 });
 
