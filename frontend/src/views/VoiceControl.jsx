@@ -27,6 +27,7 @@ const VoiceControl = ({ showMessage }) => {
             a.muted = true;
             const p = a.play();
 
+            // když promise existuje, tak jen chyť error, ale nečekej
             if (p && typeof p.then === "function") {
                 p.then(() => {
                     try {
@@ -66,9 +67,9 @@ const VoiceControl = ({ showMessage }) => {
 
             const blob = await r.blob();
             const url = URL.createObjectURL(blob);
+
             const a = new Audio(url);
             a.volume = 1.0;
-
             ttsAudioRef.current = a;
 
             a.onended = () => {
@@ -81,7 +82,7 @@ const VoiceControl = ({ showMessage }) => {
                 if (ttsAudioRef.current === a) ttsAudioRef.current = null;
             };
 
-            // play může být blokovaný – nesmí shodit vykonání příkazu
+            // play může být blokovaný – ale to nesmí shodit vykonání příkazu
             a.play().catch((e) =>
                 console.warn("[VOICE] audio.play blocked:", e)
             );
@@ -92,9 +93,10 @@ const VoiceControl = ({ showMessage }) => {
 
     const startRecording = async () => {
         if (listening) return;
+
         setListening(true);
 
-        // ✅ neblokující unlock
+        // ✅ neblokující unlock (jen pokus)
         tryUnlockAudio();
 
         try {
@@ -102,10 +104,8 @@ const VoiceControl = ({ showMessage }) => {
             wsRef.current.binaryType = "arraybuffer";
 
             wsRef.current.onopen = () => console.log("[STT] WS open");
-            wsRef.current.onerror = (e) =>
-                console.warn("[STT] WS error", e);
-            wsRef.current.onclose = () =>
-                console.warn("[STT] WS closed");
+            wsRef.current.onerror = (e) => console.warn("[STT] WS error", e);
+            wsRef.current.onclose = () => console.warn("[STT] WS closed");
 
             wsRef.current.onmessage = (msg) => {
                 const text = msg.data;
@@ -114,7 +114,7 @@ const VoiceControl = ({ showMessage }) => {
                 const now = Date.now();
                 const last = lastCommandRef.current;
 
-                // debounce duplicit
+                // pokud stejné jako minule a do 1200 ms, ignoruj
                 if (text === last.text && now - last.ts < 1200) return;
 
                 lastCommandRef.current = { text, ts: now };
@@ -139,7 +139,7 @@ const VoiceControl = ({ showMessage }) => {
                 audioContextRef.current.createMediaStreamSource(stream);
 
             const processor =
-                audioContextRef.current.createScriptProcessor(2048, 1, 1);
+                audioContextRef.current.createScriptProcessor(4096, 1, 1);
 
             processor.onaudioprocess = (e) => {
                 if (
@@ -153,6 +153,10 @@ const VoiceControl = ({ showMessage }) => {
             };
 
             source.connect(processor);
+
+            // pokud máš echo, zkus odkomentovat další řádek a nechat processor "viset" bez destination
+            processor.connect(audioContextRef.current.destination);
+
             processorRef.current = processor;
 
             showMessage("🎤 Nepřetržitý poslech spuštěn", false);
@@ -186,55 +190,28 @@ const VoiceControl = ({ showMessage }) => {
         showMessage("⏹️ Poslech zastaven", false);
     };
 
-    const geoRef = useRef({ lat: null, lon: null, ts: 0 });
-
-    const getGeoCached = async () => {
-        const now = Date.now();
-
-        if (
-            geoRef.current.lat &&
-            now - geoRef.current.ts < 5 * 60 * 1000
-        ) {
-            return geoRef.current;
-        }
-
-        if (!navigator.geolocation) return geoRef.current;
-
-        await new Promise((resolve) => {
-            navigator.geolocation.getCurrentPosition(
-                (pos) => {
-                    geoRef.current = {
-                        lat: pos.coords.latitude,
-                        lon: pos.coords.longitude,
-                        ts: Date.now(),
-                    };
-                    resolve();
-                },
-                () => resolve(),
-                { timeout: 800 }
-            );
-        });
-
-        return geoRef.current;
-    };
-
     const sendCommandToNode = async (text) => {
         try {
-            const { lat, lon } = await getGeoCached();
+            console.log("[VOICE] sending command:", text);
 
             const res = await axios.post(
                 "/api/voice/execute",
-                { command: text, lat, lon },
+                { command: text },
                 { withCredentials: true }
             );
 
-            const message =
-                res.data.message || "Příkaz zpracován.";
+            console.log("[VOICE] backend response:", res.data);
 
+            const message = res.data.message || "Příkaz zpracován.";
             showMessage(message, false);
+
+            console.log("[VOICE] speaking:", message);
+
+            // ✅ unlock jen pokus, nesmí blokovat
             tryUnlockAudio();
             speak(message);
-        } catch {
+        } catch (err) {
+            console.error("[VOICE] execute error:", err);
             showMessage("Chyba při vykonávání příkazu.", true);
             tryUnlockAudio();
             speak("Nastala chyba při vykonávání příkazu.");
@@ -244,6 +221,7 @@ const VoiceControl = ({ showMessage }) => {
     const floatTo16BitPCM = (float32Array) => {
         const buffer = new ArrayBuffer(float32Array.length * 2);
         const view = new DataView(buffer);
+
         let offset = 0;
 
         for (let i = 0; i < float32Array.length; i++, offset += 2) {
@@ -273,25 +251,18 @@ const VoiceControl = ({ showMessage }) => {
             </div>
 
             {!listening ? (
-                <button
-                    className="btn btn-primary"
-                    onClick={startRecording}
-                >
+                <button className="btn btn-primary" onClick={startRecording}>
                     🎙️ Spustit nepřetržitý poslech
                 </button>
             ) : (
-                <button
-                    className="btn btn-danger"
-                    onClick={stopRecording}
-                >
+                <button className="btn btn-danger" onClick={stopRecording}>
                     ⏹️ Zastavit poslech
                 </button>
             )}
 
             {recognized && (
                 <div className="alert alert-info mt-3">
-                    Rozpoznaný příkaz:{" "}
-                    <strong>{recognized}</strong>
+                    Rozpoznaný příkaz: <strong>{recognized}</strong>
                 </div>
             )}
         </div>
