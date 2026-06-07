@@ -117,10 +117,14 @@ function parseIntent(command) {
 
     // 📝 Vytvoř poznámku
     const noteMatch = t.match(
-        /\b(vytvor|vytvor|zapis|zapis|poznamenej|poznamenejte|uloz|uloz)\b.*\b(poznamku|poznamka)?\b\s*:?\s*(.+)$/i
+        /^(?:vytvor|vytvorit|zapis|zapsat|poznamenej|poznamenejte|uloz|ulozit)\s+(?:poznamku|poznamka)?\s*(.+)$/i
     );
-    if (noteMatch && noteMatch[3]) {
-        return { type: "create_note", text: noteMatch[3].trim() };
+
+    if (noteMatch && noteMatch[1]) {
+        return {
+            type: "create_note",
+            text: noteMatch[1].trim()
+        };
     }
 
     // 📒 Vypsat poznámky
