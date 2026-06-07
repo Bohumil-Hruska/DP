@@ -99,8 +99,14 @@ const VoiceControl = ({ showMessage }) => {
                 URL.revokeObjectURL(url);
                 if (ttsAudioRef.current === a) ttsAudioRef.current = null;
 
-                // malý cooldown i po dohrání (dozvuk v místnosti)
                 sttCooldownUntilRef.current = Date.now() + 500;
+
+                // vrať hudbu zpět po TTS
+                axios.post(
+                    "/api/spotify/volume",
+                    { volume: 60 },
+                    { withCredentials: true }
+                ).catch(() => {});
             };
 
             a.onerror = () => {
@@ -118,6 +124,13 @@ const VoiceControl = ({ showMessage }) => {
             };
 
             // play může být blokovaný – ale to nesmí shodit vykonání příkazu
+            // ztiš hudbu během TTS
+            await axios.post(
+                "/api/spotify/volume",
+                { volume: 20 },
+                { withCredentials: true }
+            ).catch(() => {});
+
             a.play().catch((e) =>
                 console.warn("[VOICE] audio.play blocked:", e)
             );
