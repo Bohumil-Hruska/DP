@@ -12,6 +12,7 @@ const VoiceControl = ({ showMessage }) => {
     const audioContextRef = useRef(null);
     const processorRef = useRef(null);
     const streamRef = useRef(null);
+    const zeroGainRef = useRef(null);
 
     const lastCommandRef = useRef({ text: "", ts: 0 });
 
@@ -264,9 +265,13 @@ const VoiceControl = ({ showMessage }) => {
 
             source.connect(processor);
 
-            // pokud máš echo, zkus odkomentovat další řádek a nechat processor "viset" bez destination
-            processor.connect(audioContextRef.current.destination);
+            const zeroGain = audioContextRef.current.createGain();
+            zeroGain.gain.value = 0;
 
+            processor.connect(zeroGain);
+            zeroGain.connect(audioContextRef.current.destination);
+
+            zeroGainRef.current = zeroGain;
             processorRef.current = processor;
 
             showMessage("🎤 Nepřetržitý poslech spuštěn", false);
@@ -281,7 +286,12 @@ const VoiceControl = ({ showMessage }) => {
         setListening(false);
 
         if (processorRef.current) processorRef.current.disconnect();
+        if (zeroGainRef.current) zeroGainRef.current.disconnect();
         if (audioContextRef.current) audioContextRef.current.close();
+
+        processorRef.current = null;
+        zeroGainRef.current = null;
+        audioContextRef.current = null;
 
         if (streamRef.current) {
             streamRef.current.getTracks().forEach((t) => t.stop());
