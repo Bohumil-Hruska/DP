@@ -173,11 +173,11 @@ router.post('/api/voice/execute', async (req, res) => {
             }
 
             const text = notes
-                .map((n, i) => `${i + 1}. Poznámka. ${n.text}.`)
-                .join(' ... ');
+                .map((n, i) => `${i + 1}. Poznámka: ${n.text}`)
+                .join(', ');
 
             return res.json({
-                message: `Tvoje poslední poznámky. ${text}`
+                message: `Tvoje poslední poznámky: ${text}`
             });
         }
 
