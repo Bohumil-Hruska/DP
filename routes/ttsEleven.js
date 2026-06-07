@@ -1,4 +1,5 @@
 const express = require("express");
+const fetch = require("node-fetch");
 
 const router = express.Router();
 
@@ -53,6 +54,7 @@ router.post("/api/tts", async (req, res) => {
         return res.send(buf);
     } catch (e) {
         console.error("[TTS] error:", e);
+        console.error("[TTS] error:", e.message, e.stack);
         return res.status(500).json({ error: "TTS failed" });
     }
 });
