@@ -28,7 +28,7 @@ const VoiceControl = ({ showMessage }) => {
         speaking: false,
         speechFrames: 0,
         silenceFrames: 0,
-        minSpeechFrames: 3,  // kolik bloků musí být řeč, než začneme posílat audio
+        minSpeechFrames: 1,  // kolik bloků musí být řeč, než začneme posílat audio
         silenceLimit: 8      // kolik bloků ticha = EOS (8*4096/16k ~ 2s)
     });
 
