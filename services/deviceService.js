@@ -11,7 +11,7 @@ async function handleDeviceOn(deviceId, token) {
             { deviceId },
             { headers: { Authorization: token } }
         );
-        return { success: true, message: `Zařízení ${deviceId} zapnuto.` };
+        return { success: true, message: `Hotovo zapnuto.` };
     } catch (err) {
         console.error('Chyba při zapnutí zařízení:', err.response?.status, err.response?.data || err.message);
         return { success: false, message: 'Nepodařilo se zapnout zařízení.' };
@@ -25,7 +25,7 @@ async function handleDeviceOff(deviceId, token) {
             { deviceId },
             { headers: { Authorization: token } }
         );
-        return { success: true, message: `Zařízení ${deviceId} vypnuto.` };
+        return { success: true, message: `Hotovo vypnuto.` };
     } catch (err) {
         console.error('Chyba při vypnutí zařízení:', err.response?.status, err.response?.data || err.message);
         return { success: false, message: 'Nepodařilo se vypnout zařízení.' };

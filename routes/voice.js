@@ -37,7 +37,7 @@ router.post('/api/voice/execute', async (req, res) => {
 
     if (!intent) {
         return res.json({
-            message: `Příkaz nerozpoznán: "${command}"`
+            message: `Příkaz nerozpoznán`
         });
     }
 
