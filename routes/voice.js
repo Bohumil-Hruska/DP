@@ -141,7 +141,7 @@ router.post('/api/voice/execute', async (req, res) => {
                 );
 
                 const msg =
-                    `Aktuálně v ${weather.city} je ${Math.round(weather.tempC)} stupňů` +
+                    `Aktuálně v Semilech je ${Math.round(weather.tempC)} stupňů` +
                     (weather.text ? ` a ${weather.text}.` : '.');
 
                 return res.json({ message: msg });
@@ -173,11 +173,11 @@ router.post('/api/voice/execute', async (req, res) => {
             }
 
             const text = notes
-                .map((n, i) => `${i + 1}. ${n.text}`)
-                .join(' ');
+                .map((n, i) => `${i + 1}. Poznámka. ${n.text}.`)
+                .join(' ... ');
 
             return res.json({
-                message: `Tvoje poslední poznámky: ${text}`
+                message: `Tvoje poslední poznámky. ${text}`
             });
         }
 
